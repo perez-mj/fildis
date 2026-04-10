@@ -99,14 +99,13 @@ const submissionSchema = new mongoose.Schema({
 // Ensure one submission per student per assignment
 submissionSchema.index({ assignmentId: 1, studentId: 1 }, { unique: true });
 
-// Update timestamp on save
-submissionSchema.pre('save', function(next) {
+// Update timestamp on save - removed 'next' parameter
+submissionSchema.pre('save', function() {
     this.updatedAt = Date.now();
-    next();
 });
 
-// Check if submission is late
-submissionSchema.pre('save', async function(next) {
+// Check if submission is late - async pre-save hook
+submissionSchema.pre('save', async function() {
     if (this.isNew) {
         const Assignment = mongoose.model('Assignment');
         const assignment = await Assignment.findById(this.assignmentId);
@@ -115,7 +114,6 @@ submissionSchema.pre('save', async function(next) {
             this.status = 'late';
         }
     }
-    next();
 });
 
 // Method to check if submission can be graded

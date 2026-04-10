@@ -1,3 +1,4 @@
+// backend/models/Assignment.js
 const mongoose = require('mongoose');
 
 const assignmentSchema = new mongoose.Schema({
@@ -41,7 +42,7 @@ const assignmentSchema = new mongoose.Schema({
     },
     availableUntil: {
         type: Date,
-        required: true
+        required: false
     },
     instructions: {
         type: String
@@ -86,32 +87,39 @@ const assignmentSchema = new mongoose.Schema({
     }
 });
 
-// Update timestamp on save
-assignmentSchema.pre('save', function(next) {
+// Update timestamp on save - NO next() parameter
+assignmentSchema.pre('save', function() {
     this.updatedAt = new Date();
-    next();
 });
 
-// Validate dates
-assignmentSchema.pre('save', function(next) {
-    if (this.dueDate && this.availableFrom && this.availableUntil) {
-        if (this.dueDate <= this.availableFrom) {
-            return next(new Error('Due date must be after available from date'));
-        }
-        if (this.availableUntil <= this.availableFrom) {
-            return next(new Error('Available until must be after available from'));
+// Validate dates - NO next() parameter, just throw errors
+assignmentSchema.pre('save', function() {
+    // Only validate if required dates exist
+    if (!this.dueDate) {
+        throw new Error('Due date is required');
+    }
+    
+    if (this.availableFrom && this.dueDate <= this.availableFrom) {
+        throw new Error('Due date must be after available from date');
+    }
+    
+    // Validate availableUntil only if it exists
+    if (this.availableUntil) {
+        if (this.availableFrom && this.availableUntil <= this.availableFrom) {
+            throw new Error('Available until must be after available from');
         }
         if (this.dueDate > this.availableUntil) {
-            return next(new Error('Due date must be before or equal to available until'));
+            throw new Error('Due date must be before or equal to available until');
         }
     }
-    next();
 });
 
 // Virtual for checking if assignment is active
 assignmentSchema.virtual('isOpen').get(function() {
     const now = new Date();
-    return now >= this.availableFrom && now <= this.availableUntil;
+    const availableFrom = this.availableFrom || new Date(0);
+    const availableUntil = this.availableUntil || new Date(8640000000000000);
+    return now >= availableFrom && now <= availableUntil;
 });
 
 // Virtual for checking if assignment is overdue

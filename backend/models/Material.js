@@ -90,9 +90,8 @@ const materialSchema = new mongoose.Schema({
 });
 
 // Update timestamp on save
-materialSchema.pre('save', function(next) {
+materialSchema.pre('save', function() {
     this.updatedAt = Date.now();
-    next();
 });
 
 module.exports = mongoose.model('Material', materialSchema);

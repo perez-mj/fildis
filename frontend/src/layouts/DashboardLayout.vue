@@ -1,3 +1,4 @@
+<!-- frontend/src/layouts/DashboardLayout.vue -->
 <template>
   <v-app>
     <!-- Navbar -->

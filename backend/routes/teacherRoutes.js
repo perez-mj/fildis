@@ -260,7 +260,14 @@ router.post('/courses/:courseId/assignments',
 // @desc    Update assignment
 router.put('/assignments/:assignmentId', async (req, res) => {
     try {
-        const assignment = await Assignment.findById(req.params.assignmentId);
+        const assignmentId = req.params.assignmentId;
+        
+        // Validate assignment ID
+        if (!assignmentId || typeof assignmentId === 'object') {
+            return res.status(400).json({ message: 'Invalid assignment ID format' });
+        }
+        
+        const assignment = await Assignment.findById(assignmentId);
 
         if (!assignment) {
             return res.status(404).json({ message: 'Assignment not found' });
@@ -289,7 +296,89 @@ router.put('/assignments/:assignmentId', async (req, res) => {
         });
     } catch (error) {
         console.error(error);
+        if (error.name === 'CastError') {
+            return res.status(400).json({ message: 'Invalid assignment ID format' });
+        }
         res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// @route   DELETE /api/teacher/assignments/:assignmentId
+// @desc    Delete an assignment and all its submissions
+router.delete('/assignments/:assignmentId', async (req, res) => {
+    try {
+        const assignmentId = req.params.assignmentId;
+        
+        // Validate assignment ID
+        if (!assignmentId || typeof assignmentId === 'object') {
+            return res.status(400).json({ message: 'Invalid assignment ID format' });
+        }
+        
+        const assignment = await Assignment.findById(assignmentId);
+
+        if (!assignment) {
+            return res.status(404).json({ message: 'Assignment not found' });
+        }
+
+        // Check if teacher owns this assignment
+        if (assignment.createdBy.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'Not authorized' });
+        }
+
+        // Delete all submissions for this assignment
+        const submissions = await Submission.find({ assignmentId: assignmentId });
+        
+        // Delete submission files from Google Drive
+        for (const submission of submissions) {
+            if (submission.submittedFiles && submission.submittedFiles.length > 0) {
+                for (const file of submission.submittedFiles) {
+                    if (file.googleDriveFileId) {
+                        try {
+                            await googleDriveService.deleteFile(file.googleDriveFileId);
+                        } catch (driveError) {
+                            console.error(`Error deleting submission file ${file.googleDriveFileId}:`, driveError);
+                            // Continue with other deletions even if one fails
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Delete all submissions from database
+        await Submission.deleteMany({ assignmentId: assignmentId });
+        
+        // Delete assignment attachments from Google Drive
+        if (assignment.attachments && assignment.attachments.length > 0) {
+            for (const attachment of assignment.attachments) {
+                if (attachment.googleDriveFileId) {
+                    try {
+                        await googleDriveService.deleteFile(attachment.googleDriveFileId);
+                    } catch (driveError) {
+                        console.error(`Error deleting assignment attachment ${attachment.googleDriveFileId}:`, driveError);
+                    }
+                }
+            }
+        }
+        
+        // Remove assignment reference from course
+        await Course.findByIdAndUpdate(
+            assignment.courseId,
+            { $pull: { assignments: assignment._id } }
+        );
+        
+        // Delete the assignment
+        await assignment.deleteOne();
+
+        res.json({
+            success: true,
+            message: 'Assignment and all associated submissions deleted successfully'
+        });
+    } catch (error) {
+        console.error(error);
+        if (error.name === 'CastError') {
+            return res.status(400).json({ message: 'Invalid assignment ID format' });
+        }
+        res.status(500).json({ message: `Server error: ${error.message}` });
     }
 });
 
@@ -297,7 +386,14 @@ router.put('/assignments/:assignmentId', async (req, res) => {
 // @desc    Get all submissions for an assignment
 router.get('/assignments/:assignmentId/submissions', async (req, res) => {
     try {
-        const assignment = await Assignment.findById(req.params.assignmentId);
+        const assignmentId = req.params.assignmentId;
+        
+        // Validate assignment ID
+        if (!assignmentId || typeof assignmentId === 'object') {
+            return res.status(400).json({ message: 'Invalid assignment ID format' });
+        }
+        
+        const assignment = await Assignment.findById(assignmentId);
 
         if (!assignment) {
             return res.status(404).json({ message: 'Assignment not found' });
@@ -319,6 +415,9 @@ router.get('/assignments/:assignmentId/submissions', async (req, res) => {
         });
     } catch (error) {
         console.error(error);
+        if (error.name === 'CastError') {
+            return res.status(400).json({ message: 'Invalid assignment ID format' });
+        }
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -328,8 +427,14 @@ router.get('/assignments/:assignmentId/submissions', async (req, res) => {
 router.post('/submissions/:submissionId/grade', async (req, res) => {
     try {
         const { score, feedback } = req.body;
+        const submissionId = req.params.submissionId;
+        
+        // Validate submission ID
+        if (!submissionId || typeof submissionId === 'object') {
+            return res.status(400).json({ message: 'Invalid submission ID format' });
+        }
 
-        const submission = await Submission.findById(req.params.submissionId)
+        const submission = await Submission.findById(submissionId)
             .populate({
                 path: 'assignmentId',
                 select: 'maxScore createdBy'
@@ -368,6 +473,9 @@ router.post('/submissions/:submissionId/grade', async (req, res) => {
         });
     } catch (error) {
         console.error(error);
+        if (error.name === 'CastError') {
+            return res.status(400).json({ message: 'Invalid submission ID format' });
+        }
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -376,7 +484,14 @@ router.post('/submissions/:submissionId/grade', async (req, res) => {
 // @desc    Get grading summary for assignment
 router.get('/assignments/:assignmentId/grading-summary', async (req, res) => {
     try {
-        const assignment = await Assignment.findById(req.params.assignmentId);
+        const assignmentId = req.params.assignmentId;
+        
+        // Validate assignment ID
+        if (!assignmentId || typeof assignmentId === 'object') {
+            return res.status(400).json({ message: 'Invalid assignment ID format' });
+        }
+        
+        const assignment = await Assignment.findById(assignmentId);
 
         if (!assignment) {
             return res.status(404).json({ message: 'Assignment not found' });
@@ -415,6 +530,9 @@ router.get('/assignments/:assignmentId/grading-summary', async (req, res) => {
         });
     } catch (error) {
         console.error(error);
+        if (error.name === 'CastError') {
+            return res.status(400).json({ message: 'Invalid assignment ID format' });
+        }
         res.status(500).json({ message: 'Server error' });
     }
 });

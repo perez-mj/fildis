@@ -1,3 +1,4 @@
+<!-- frontend/src/components/common/Sidebar.vue -->
 <template>
   <v-navigation-drawer
     v-model="drawer"
@@ -6,44 +7,51 @@
     @click="rail = false"
   >
     <!-- User info section -->
-    <v-list-item
-      v-if="!rail"
-      :title="authStore.user?.name"
-      :subtitle="authStore.userRole"
-      class="py-4"
-    >
-      <template v-slot:prepend>
-        <v-avatar color="primary" size="40">
-          <span class="text-h6">
-            {{ getUserInitials() }}
-          </span>
-        </v-avatar>
-      </template>
+    <template v-if="authStore.user">
+      <v-list-item
+        v-if="!rail"
+        :title="displayName"
+        :subtitle="formattedUserRole"
+        class="py-4"
+      >
+        <template v-slot:prepend>
+          <v-avatar :color="avatarColor" size="40">
+            <span class="text-h6">
+              {{ getUserInitials() }}
+            </span>
+          </v-avatar>
+        </template>
 
-      <template v-slot:append>
+        <template v-slot:append>
+          <v-btn
+            variant="text"
+            icon="mdi-chevron-left"
+            @click.stop="toggleRail"
+          ></v-btn>
+        </template>
+      </v-list-item>
+
+      <!-- Rail toggle button (when rail is true) -->
+      <div v-else class="d-flex justify-center py-4">
         <v-btn
           variant="text"
-          icon="mdi-chevron-left"
-          @click.stop="rail = !rail"
+          icon="mdi-chevron-right"
+          @click.stop="toggleRail"
         ></v-btn>
-      </template>
-    </v-list-item>
+      </div>
+    </template>
 
-    <!-- Rail toggle button (when rail is true) -->
-    <div v-else class="d-flex justify-center py-4">
-      <v-btn
-        variant="text"
-        icon="mdi-chevron-right"
-        @click.stop="rail = !rail"
-      ></v-btn>
+    <!-- Loading state -->
+    <div v-else-if="authStore.loading" class="d-flex justify-center py-4">
+      <v-progress-circular indeterminate size="32"></v-progress-circular>
     </div>
 
-    <v-divider></v-divider>
+    <v-divider v-if="authStore.user"></v-divider>
 
     <!-- Navigation items -->
     <v-list density="compact" nav>
       <!-- Admin menu items -->
-      <template v-if="authStore.userRole === 'admin'">
+      <template v-if="authStore.isAdmin">
         <v-list-item
           to="/admin/dashboard"
           prepend-icon="mdi-view-dashboard"
@@ -99,12 +107,13 @@
       </template>
 
       <!-- Teacher menu items -->
-      <template v-else-if="authStore.userRole === 'teacher'">
+      <template v-else-if="authStore.isTeacher">
         <v-list-item
           to="/teacher/dashboard"
           prepend-icon="mdi-view-dashboard"
           title="Dashboard"
           value="dashboard"
+          :active="isActive('/teacher/dashboard')"
         ></v-list-item>
 
         <v-list-item
@@ -112,6 +121,7 @@
           prepend-icon="mdi-book-open-variant"
           title="My Courses"
           value="courses"
+          :active="isActive('/teacher/courses')"
         ></v-list-item>
 
         <v-list-item
@@ -119,6 +129,7 @@
           prepend-icon="mdi-clipboard-list"
           title="Assignments"
           value="assignments"
+          :active="isActive('/teacher/assignments')"
         ></v-list-item>
 
         <v-list-item
@@ -126,16 +137,18 @@
           prepend-icon="mdi-bullhorn"
           title="Announcements"
           value="announcements"
+          :active="isActive('/teacher/announcements')"
         ></v-list-item>
       </template>
 
       <!-- Student menu items -->
-      <template v-else-if="authStore.userRole === 'student'">
+      <template v-else-if="authStore.isStudent">
         <v-list-item
           to="/student/dashboard"
           prepend-icon="mdi-view-dashboard"
           title="Dashboard"
           value="dashboard"
+          :active="isActive('/student/dashboard')"
         ></v-list-item>
 
         <v-list-item
@@ -143,6 +156,7 @@
           prepend-icon="mdi-book-open-variant"
           title="My Courses"
           value="courses"
+          :active="isActive('/student/courses')"
         ></v-list-item>
 
         <v-list-item
@@ -150,6 +164,7 @@
           prepend-icon="mdi-clipboard-list"
           title="Assignments"
           value="assignments"
+          :active="isActive('/student/assignments')"
         ></v-list-item>
 
         <v-list-item
@@ -157,6 +172,7 @@
           prepend-icon="mdi-chart-line"
           title="Grades"
           value="grades"
+          :active="isActive('/student/grades')"
         ></v-list-item>
 
         <v-list-item
@@ -164,6 +180,7 @@
           prepend-icon="mdi-bullhorn"
           title="Announcements"
           value="announcements"
+          :active="isActive('/student/announcements')"
         ></v-list-item>
       </template>
     </v-list>
@@ -204,18 +221,48 @@ const drawer = computed({
 
 const rail = ref(false)
 
+// Computed properties for better display
+const displayName = computed(() => {
+  if (authStore.user?.name) return authStore.user.name
+  if (authStore.user?.firstName && authStore.user?.lastName) {
+    return `${authStore.user.firstName} ${authStore.user.lastName}`
+  }
+  return 'User'
+})
+
+const formattedUserRole = computed(() => {
+  const role = authStore.userRole
+  if (!role) return ''
+  return role.charAt(0).toUpperCase() + role.slice(1)
+})
+
+const avatarColor = computed(() => {
+  const role = authStore.userRole
+  switch(role) {
+    case 'admin': return 'red'
+    case 'teacher': return 'blue'
+    case 'student': return 'green'
+    default: return 'primary'
+  }
+})
+
 const getUserInitials = () => {
-  const name = authStore.user?.name || ''
-  return name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
+  const name = displayName.value
+  if (!name || name === 'User') return '?'
+  
+  const parts = name.split(' ')
+  if (parts.length === 1) {
+    return parts[0].charAt(0).toUpperCase()
+  }
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase()
 }
 
 const isActive = (path) => {
   return route.path.startsWith(path)
+}
+
+const toggleRail = () => {
+  rail.value = !rail.value
 }
 
 const logout = async () => {
@@ -223,3 +270,14 @@ const logout = async () => {
   router.push('/login')
 }
 </script>
+
+<style scoped>
+/* Optional: Add some styling for better UX */
+.v-list-item :deep(.v-list-item__prepend) {
+  margin-right: 12px;
+}
+
+.v-navigation-drawer :deep(.v-list-item__append) {
+  margin-left: auto;
+}
+</style>

@@ -74,7 +74,7 @@ const announcementSchema = new mongoose.Schema({
     }
 });
 
-// Fix the pre-save hook - remove the 'next' parameter
+// Fix the pre-save hook 
 announcementSchema.pre('save', function() {
     this.updatedAt = Date.now();
 });

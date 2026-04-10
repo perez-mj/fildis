@@ -1,3 +1,4 @@
+// backend/routes/adminRoutes.js
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
@@ -158,7 +159,8 @@ router.delete('/users/:id', async (req, res) => {
             );
         }
 
-        await user.remove();
+        // Use deleteOne instead of remove()
+        await User.deleteOne({ _id: req.params.id });
 
         res.json({
             success: true,
@@ -171,6 +173,90 @@ router.delete('/users/:id', async (req, res) => {
 });
 
 // ==================== Course Management ====================
+
+// @route   GET /api/admin/courses
+// @desc    Get all courses with filtering
+// @access  Admin
+router.get('/courses', async (req, res) => {
+    try {
+        const { department, semester, isActive, search, page = 1, limit = 10 } = req.query;
+        
+        let query = {};
+        
+        if (department) query.department = department;
+        if (semester) query.semester = parseInt(semester);
+        if (isActive !== undefined) query.isActive = isActive === 'true';
+        
+        if (search) {
+            query.$or = [
+                { courseCode: { $regex: search, $options: 'i' } },
+                { courseName: { $regex: search, $options: 'i' } },
+                { description: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+
+        const courses = await Course.find(query)
+            .populate({
+                path: 'teacher',
+                select: 'firstName lastName email department',
+                // Handle null teacher by just not populating
+            })
+            .populate('students', 'firstName lastName studentId email')
+            .skip(skip)
+            .limit(parseInt(limit))
+            .sort({ createdAt: -1 });
+
+        const total = await Course.countDocuments(query);
+
+        // Ensure teacher field is null if not populated
+        const processedCourses = courses.map(course => {
+            const courseObj = course.toObject();
+            if (!courseObj.teacher) {
+                courseObj.teacher = null;
+            }
+            return courseObj;
+        });
+
+        res.json({
+            success: true,
+            data: processedCourses,
+            pagination: {
+                page: parseInt(page),
+                limit: parseInt(limit),
+                total,
+                pages: Math.ceil(total / parseInt(limit))
+            }
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error: ' + error.message });
+    }
+});
+
+// @route   GET /api/admin/courses/:id
+// @desc    Get single course by ID
+// @access  Admin
+router.get('/courses/:id', async (req, res) => {
+    try {
+        const course = await Course.findById(req.params.id)
+            .populate('teacher', 'firstName lastName email department')
+            .populate('students', 'firstName lastName lastName studentId email');
+        
+        if (!course) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+
+        res.json({
+            success: true,
+            data: course
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
 
 // @route   POST /api/admin/courses
 // @desc    Create new course
@@ -188,6 +274,9 @@ router.post('/courses', async (req, res) => {
         const course = new Course(req.body);
         await course.save();
 
+        // Populate teacher info before sending response
+        await course.populate('teacher', 'firstName lastName email');
+
         res.status(201).json({
             success: true,
             message: 'Course created successfully',
@@ -195,7 +284,7 @@ router.post('/courses', async (req, res) => {
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server error: ' + error.message });
     }
 });
 
@@ -221,6 +310,9 @@ router.put('/courses/:id', async (req, res) => {
         });
 
         await course.save();
+        
+        // Populate teacher info before sending response
+        await course.populate('teacher', 'firstName lastName email');
 
         res.json({
             success: true,
@@ -244,7 +336,13 @@ router.delete('/courses/:id', async (req, res) => {
             return res.status(404).json({ message: 'Course not found' });
         }
 
-        await course.remove();
+        // Remove course reference from students
+        await User.updateMany(
+            { courses: course._id },
+            { $pull: { courses: course._id } }
+        );
+
+        await Course.deleteOne({ _id: req.params.id });
 
         res.json({
             success: true,
@@ -309,31 +407,28 @@ router.post('/courses/:courseId/students', async (req, res) => {
     }
 });
 
-// @route   DELETE /api/admin/courses/:courseId/students/:studentId
-// @desc    Remove student from course
+// @route   DELETE /api/admin/courses/:id
+// @desc    Delete course
 // @access  Admin
-router.delete('/courses/:courseId/students/:studentId', async (req, res) => {
+router.delete('/courses/:id', async (req, res) => {
     try {
-        const course = await Course.findById(req.params.courseId);
+        const course = await Course.findById(req.params.id);
+
         if (!course) {
             return res.status(404).json({ message: 'Course not found' });
         }
 
-        // Remove student from course
-        course.students = course.students.filter(
-            id => id.toString() !== req.params.studentId
-        );
-        await course.save();
-
-        // Remove course from student's courses
-        await User.findByIdAndUpdate(
-            req.params.studentId,
+        // Remove course reference from students
+        await User.updateMany(
+            { courses: course._id },
             { $pull: { courses: course._id } }
         );
 
+        await Course.deleteOne({ _id: req.params.id });
+
         res.json({
             success: true,
-            message: 'Student removed from course successfully'
+            message: 'Course deleted successfully'
         });
     } catch (error) {
         console.error(error);

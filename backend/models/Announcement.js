@@ -1,3 +1,4 @@
+// backend/models/Announcement.js
 const mongoose = require('mongoose');
 
 const announcementSchema = new mongoose.Schema({
@@ -73,10 +74,9 @@ const announcementSchema = new mongoose.Schema({
     }
 });
 
-// Update timestamp on save
-announcementSchema.pre('save', function(next) {
+// Fix the pre-save hook - remove the 'next' parameter
+announcementSchema.pre('save', function() {
     this.updatedAt = Date.now();
-    next();
 });
 
 // Auto-expire announcements
@@ -86,7 +86,6 @@ announcementSchema.methods.isExpired = function() {
 
 // Virtual for unread count
 announcementSchema.virtual('unreadCount').get(function() {
-    // This would need to be calculated based on target audience
     return 0;
 });
 

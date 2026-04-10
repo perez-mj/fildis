@@ -1,7 +1,7 @@
+// backend/routes/announcementRoutes.js
 const express = require('express');
 const router = express.Router();
 const Announcement = require('../models/Announcement');
-const User = require('../models/User');
 const Course = require('../models/Course');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -48,12 +48,12 @@ router.get('/', protect, async (req, res) => {
             .populate('courseId', 'courseName courseCode')
             .sort({ isPinned: -1, createdAt: -1 });
 
-        // Mark as read for the current user
+        // Mark as read for the current user (non-admin)
         if (req.user.role !== 'admin') {
             const userId = req.user.id;
-            announcements.forEach(async (announcement) => {
+            for (const announcement of announcements) {
                 const alreadyRead = announcement.readBy.some(
-                    r => r.user.toString() === userId
+                    r => r.user && r.user.toString() === userId
                 );
                 
                 if (!alreadyRead) {
@@ -61,7 +61,7 @@ router.get('/', protect, async (req, res) => {
                     announcement.views += 1;
                     await announcement.save();
                 }
-            });
+            }
         }
 
         res.json({
@@ -70,7 +70,7 @@ router.get('/', protect, async (req, res) => {
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server error: ' + error.message });
     }
 });
 
@@ -98,17 +98,23 @@ router.post('/', protect, async (req, res) => {
             }
         }
 
+        // Remove courseId if targetAudience is not 'course'
+        const announcementData = { ...req.body };
+        if (announcementData.targetAudience !== 'course') {
+            delete announcementData.courseId;
+        }
+
         const announcement = new Announcement({
-            ...req.body,
+            ...announcementData,
             author: req.user.id
         });
 
         await announcement.save();
 
         // If it's a course announcement, add to course
-        if (req.body.targetAudience === 'course' && req.body.courseId) {
+        if (announcement.targetAudience === 'course' && announcement.courseId) {
             await Course.findByIdAndUpdate(
-                req.body.courseId,
+                announcement.courseId,
                 { $push: { announcements: announcement._id } }
             );
         }
@@ -124,7 +130,7 @@ router.post('/', protect, async (req, res) => {
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server error: ' + error.message });
     }
 });
 
@@ -144,13 +150,20 @@ router.put('/:id', protect, async (req, res) => {
             return res.status(403).json({ message: 'Not authorized to update this announcement' });
         }
 
-        const updatableFields = ['title', 'content', 'priority', 'expiresAt', 'isPinned', 'isActive'];
+        const updatableFields = ['title', 'content', 'priority', 'expiresAt', 'isPinned', 'isActive', 'targetAudience'];
         
         updatableFields.forEach(field => {
             if (req.body[field] !== undefined) {
                 announcement[field] = req.body[field];
             }
         });
+
+        // Handle courseId update
+        if (req.body.targetAudience === 'course' && req.body.courseId) {
+            announcement.courseId = req.body.courseId;
+        } else if (req.body.targetAudience !== 'course') {
+            announcement.courseId = null;
+        }
 
         await announcement.save();
 
@@ -165,7 +178,7 @@ router.put('/:id', protect, async (req, res) => {
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server error: ' + error.message });
     }
 });
 
@@ -193,7 +206,7 @@ router.delete('/:id', protect, async (req, res) => {
             );
         }
 
-        await announcement.remove();
+        await Announcement.deleteOne({ _id: req.params.id });
 
         res.json({
             success: true,
@@ -201,7 +214,7 @@ router.delete('/:id', protect, async (req, res) => {
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server error: ' + error.message });
     }
 });
 
@@ -233,7 +246,7 @@ router.get('/unread-count', protect, async (req, res) => {
         const announcements = await Announcement.find(query);
         
         const unreadCount = announcements.filter(a => 
-            !a.readBy.some(r => r.user.toString() === req.user.id)
+            !a.readBy.some(r => r.user && r.user.toString() === req.user.id)
         ).length;
 
         res.json({
@@ -242,7 +255,7 @@ router.get('/unread-count', protect, async (req, res) => {
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server error: ' + error.message });
     }
 });
 
@@ -258,7 +271,7 @@ router.post('/:id/mark-read', protect, async (req, res) => {
         }
 
         const alreadyRead = announcement.readBy.some(
-            r => r.user.toString() === req.user.id
+            r => r.user && r.user.toString() === req.user.id
         );
 
         if (!alreadyRead) {
@@ -273,7 +286,7 @@ router.post('/:id/mark-read', protect, async (req, res) => {
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server error: ' + error.message });
     }
 });
 

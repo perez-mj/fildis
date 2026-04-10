@@ -1,3 +1,4 @@
+// frontend/src/stores/userStore.js
 import { defineStore } from 'pinia'
 import userService from '@/services/userService'
 
@@ -12,10 +13,13 @@ export const useUserStore = defineStore('user', {
   actions: {
     async fetchTeachers() {
       this.loading = true
+      this.error = null
       try {
         this.teachers = await userService.getTeachers()
+        return this.teachers
       } catch (error) {
-        this.error = error.message
+        this.error = error.response?.data?.message || error.message
+        throw error
       } finally {
         this.loading = false
       }
@@ -23,16 +27,21 @@ export const useUserStore = defineStore('user', {
 
     async fetchStudents() {
       this.loading = true
+      this.error = null
       try {
         this.students = await userService.getStudents()
+        return this.students
       } catch (error) {
-        this.error = error.message
+        this.error = error.response?.data?.message || error.message
+        throw error
       } finally {
         this.loading = false
       }
     },
 
     async createUser(userData) {
+      this.loading = true
+      this.error = null
       try {
         const newUser = await userService.createUser(userData)
         if (userData.role === 'teacher') {
@@ -42,34 +51,56 @@ export const useUserStore = defineStore('user', {
         }
         return newUser
       } catch (error) {
-        this.error = error.message
+        this.error = error.response?.data?.message || error.message
         throw error
+      } finally {
+        this.loading = false
       }
     },
 
     async updateUser(id, userData) {
+      this.loading = true
+      this.error = null
       try {
         const updatedUser = await userService.updateUser(id, userData)
-        const array = userData.role === 'teacher' ? this.teachers : this.students
-        const index = array.findIndex(u => u.id === id)
-        if (index !== -1) {
-          array[index] = updatedUser
+        
+        // Find and update in the appropriate array
+        if (updatedUser.role === 'teacher') {
+          const index = this.teachers.findIndex(u => u._id === id)
+          if (index !== -1) {
+            this.teachers[index] = updatedUser
+          }
+        } else if (updatedUser.role === 'student') {
+          const index = this.students.findIndex(u => u._id === id)
+          if (index !== -1) {
+            this.students[index] = updatedUser
+          }
         }
         return updatedUser
       } catch (error) {
-        this.error = error.message
+        this.error = error.response?.data?.message || error.message
         throw error
+      } finally {
+        this.loading = false
       }
     },
 
     async deleteUser(id, role) {
+      this.loading = true
+      this.error = null
       try {
         await userService.deleteUser(id)
-        const array = role === 'teacher' ? this.teachers : this.students
-        this[role === 'teacher' ? 'teachers' : 'students'] = array.filter(u => u.id !== id)
+        
+        if (role === 'teacher') {
+          this.teachers = this.teachers.filter(u => u._id !== id)
+        } else if (role === 'student') {
+          this.students = this.students.filter(u => u._id !== id)
+        }
       } catch (error) {
-        this.error = error.message
+        this.error = error.response?.data?.message || error.message
         throw error
+      } finally {
+        this.loading = false
       }
     }
   },
@@ -77,6 +108,7 @@ export const useUserStore = defineStore('user', {
   getters: {
     getTeachers: (state) => state.teachers,
     getStudents: (state) => state.students,
-    isLoading: (state) => state.loading
+    isLoading: (state) => state.loading,
+    getError: (state) => state.error
   }
 })

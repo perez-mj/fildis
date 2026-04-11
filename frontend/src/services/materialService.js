@@ -12,19 +12,19 @@ const extractId = (id) => {
 };
 
 export default {
-  // Get materials for a course
+  // Get materials for a course (student view)
   async getCourseMaterials(courseId) {
     const id = extractId(courseId);
     if (!id) throw new Error('Invalid course ID');
-    const response = await api.get(`/courses/${id}/materials`)
+    const response = await api.get(`/student/courses/${id}/materials`)
     return response.data.data
   },
 
-  // Get material by ID
-  async getMaterial(id) {
-    const materialId = extractId(id);
-    if (!materialId) throw new Error('Invalid material ID');
-    const response = await api.get(`/materials/${materialId}`)
+  // Get material by ID (student view)
+  async getMaterial(materialId) {
+    const id = extractId(materialId);
+    if (!id) throw new Error('Invalid material ID');
+    const response = await api.get(`/student/materials/${id}`)
     return response.data.data
   },
 
@@ -33,6 +33,14 @@ export default {
     const id = extractId(materialId);
     if (!id) throw new Error('Invalid material ID');
     const response = await api.post(`/student/materials/${id}/download`)
+    return response.data
+  },
+
+  // Track material view (student)
+  async trackView(materialId) {
+    const id = extractId(materialId);
+    if (!id) throw new Error('Invalid material ID');
+    const response = await api.post(`/student/materials/${id}/view`)
     return response.data
   }
 }

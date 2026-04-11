@@ -1,13 +1,30 @@
 // backend/services/googleDriveService.js
-const { drive, FOLDER_IDS } = require('../config/googleDrive');
 const stream = require('stream');
 const mime = require('mime-types');
+const { initializeDrive, drive: getDrive, FOLDER_IDS: getFolderIds } = require('../config/googleDrive');
 
 class GoogleDriveService {
+    constructor() {
+        this.initialized = false;
+        this.drive = null;
+        this.FOLDER_IDS = null;
+    }
+
+    async ensureInitialized() {
+        if (!this.initialized) {
+            const { drive, FOLDER_IDS } = await initializeDrive();
+            this.drive = drive;
+            this.FOLDER_IDS = FOLDER_IDS;
+            this.initialized = true;
+        }
+    }
+
     // Upload file to Google Drive
     async uploadFile(file, folderType, metadata = {}) {
         try {
-            const folderId = FOLDER_IDS[folderType] || FOLDER_IDS.other;
+            await this.ensureInitialized();
+            
+            const folderId = this.FOLDER_IDS[folderType] || this.FOLDER_IDS.other;
             
             if (!folderId) {
                 throw new Error(`Folder ID not configured for type: ${folderType}`);
@@ -19,17 +36,18 @@ class GoogleDriveService {
 
             // Generate unique filename
             const timestamp = Date.now();
-            const sanitizedName = file.originalname.replace(/[^a-zA-Z0-9.]/g, '-');
+            const sanitizedName = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '-');
             const fileName = `${timestamp}-${sanitizedName}`;
 
             // Upload to Google Drive
-            const response = await drive.files.create({
+            const response = await this.drive.files.create({
                 requestBody: {
                     name: fileName,
                     parents: [folderId],
                     description: JSON.stringify({
                         originalName: file.originalname,
-                        uploadedBy: metadata.userId,
+                        uploadedBy: metadata.userId || 'system',
+                        uploadedAt: new Date().toISOString(),
                         ...metadata
                     }),
                     mimeType: file.mimetype || mime.lookup(file.originalname) || 'application/octet-stream'
@@ -38,17 +56,24 @@ class GoogleDriveService {
                     mimeType: file.mimetype || mime.lookup(file.originalname) || 'application/octet-stream',
                     body: bufferStream
                 },
-                fields: 'id, name, mimeType, size, webViewLink, webContentLink, createdTime'
+                fields: 'id, name, mimeType, size, webViewLink, webContentLink, createdTime',
+                supportsAllDrives: true
             });
 
-            // Make file publicly accessible (optional - you can adjust permissions)
-            await drive.permissions.create({
-                fileId: response.data.id,
-                requestBody: {
-                    role: 'reader',
-                    type: 'anyone'
-                }
-            });
+            // Make file accessible (optional)
+            try {
+                await this.drive.permissions.create({
+                    fileId: response.data.id,
+                    requestBody: {
+                        role: 'reader',
+                        type: 'anyone'
+                    },
+                    supportsAllDrives: true
+                });
+            } catch (permError) {
+                console.warn('Could not set public permission:', permError.message);
+                // Not fatal - file still uploaded
+            }
 
             return {
                 success: true,
@@ -70,83 +95,90 @@ class GoogleDriveService {
     // Upload multiple files
     async uploadMultipleFiles(files, folderType, metadata = {}) {
         const uploadPromises = files.map(file => this.uploadFile(file, folderType, metadata));
-        return Promise.all(uploadPromises);
+        const results = await Promise.allSettled(uploadPromises);
+        
+        const successful = results.filter(r => r.status === 'fulfilled').map(r => r.value);
+        const failed = results.filter(r => r.status === 'rejected').map(r => r.reason);
+        
+        return {
+            success: successful,
+            failed: failed,
+            totalSuccess: successful.length,
+            totalFailed: failed.length
+        };
     }
 
     // Delete file from Google Drive
     async deleteFile(fileId) {
         try {
-            await drive.files.delete({
-                fileId: fileId
+            await this.ensureInitialized();
+            
+            await this.drive.files.delete({
+                fileId: fileId,
+                supportsAllDrives: true
             });
-            return { success: true };
+            return { success: true, fileId };
         } catch (error) {
             console.error('Google Drive delete error:', error);
-            throw new Error(`Failed to delete file from Google Drive: ${error.message}`);
+            throw new Error(`Failed to delete file: ${error.message}`);
         }
     }
 
     // Get file metadata
     async getFileMetadata(fileId) {
         try {
-            const response = await drive.files.get({
+            await this.ensureInitialized();
+            
+            const response = await this.drive.files.get({
                 fileId: fileId,
-                fields: 'id, name, mimeType, size, webViewLink, webContentLink, createdTime, description'
+                fields: 'id, name, mimeType, size, webViewLink, webContentLink, createdTime, description',
+                supportsAllDrives: true
             });
-            return response.data;
+            
+            // Parse description if it exists
+            let metadata = {};
+            if (response.data.description) {
+                try {
+                    metadata = JSON.parse(response.data.description);
+                } catch (e) {
+                    metadata = { raw: response.data.description };
+                }
+            }
+            
+            return { ...response.data, metadata };
         } catch (error) {
             console.error('Google Drive metadata error:', error);
             throw new Error(`Failed to get file metadata: ${error.message}`);
         }
     }
 
-    // Update file (replace with new version)
-    async updateFile(fileId, newFile, metadata = {}) {
-        try {
-            const bufferStream = new stream.PassThrough();
-            bufferStream.end(newFile.buffer);
-
-            const response = await drive.files.update({
-                fileId: fileId,
-                requestBody: {
-                    description: JSON.stringify({
-                        ...metadata,
-                        updatedAt: new Date().toISOString()
-                    })
-                },
-                media: {
-                    mimeType: newFile.mimetype || mime.lookup(newFile.originalname) || 'application/octet-stream',
-                    body: bufferStream
-                },
-                fields: 'id, name, mimeType, size, webViewLink, webContentLink, createdTime'
-            });
-
-            return {
-                success: true,
-                fileId: response.data.id,
-                fileName: response.data.name,
-                webViewLink: response.data.webViewLink,
-                webContentLink: response.data.webContentLink
-            };
-        } catch (error) {
-            console.error('Google Drive update error:', error);
-            throw new Error(`Failed to update file: ${error.message}`);
-        }
-    }
-
     // List files in a folder
-    async listFiles(folderType, query = '') {
+    async listFiles(folderType, query = '', options = {}) {
         try {
-            const folderId = FOLDER_IDS[folderType];
+            await this.ensureInitialized();
+            
+            const folderId = this.FOLDER_IDS[folderType];
             
             if (!folderId) {
                 throw new Error(`Folder ID not configured for type: ${folderType}`);
             }
 
-            const response = await drive.files.list({
-                q: `'${folderId}' in parents and name contains '${query}' and trashed=false`,
+            let q = `'${folderId}' in parents and trashed=false`;
+            if (query) {
+                q += ` and name contains '${query}'`;
+            }
+            
+            if (options.mimeType) {
+                q += ` and mimeType = '${options.mimeType}'`;
+            }
+
+            const response = await this.drive.files.list({
+                q: q,
                 fields: 'files(id, name, mimeType, size, webViewLink, webContentLink, createdTime, description)',
-                orderBy: 'createdTime desc'
+                orderBy: options.orderBy || 'createdTime desc',
+                pageSize: options.pageSize || 100,
+                supportsAllDrives: true,
+                includeItemsFromAllDrives: true
             });
 
             return response.data.files;
@@ -156,21 +188,61 @@ class GoogleDriveService {
         }
     }
 
-    // Create folder (if needed)
+    // Create folder if needed
     async createFolder(folderName, parentFolderId = 'root') {
         try {
-            const response = await drive.files.create({
+            await this.ensureInitialized();
+            
+            const response = await this.drive.files.create({
                 requestBody: {
                     name: folderName,
                     mimeType: 'application/vnd.google-apps.folder',
                     parents: [parentFolderId]
                 },
-                fields: 'id, name'
+                fields: 'id, name',
+                supportsAllDrives: true
             });
+            
+            console.log(`📁 Created folder: ${folderName} (${response.data.id})`);
             return response.data;
         } catch (error) {
             console.error('Google Drive folder creation error:', error);
             throw new Error(`Failed to create folder: ${error.message}`);
+        }
+    }
+
+    // Download file
+    async downloadFile(fileId) {
+        try {
+            await this.ensureInitialized();
+            
+            const response = await this.drive.files.get(
+                { fileId: fileId, alt: 'media' },
+                { responseType: 'stream' }
+            );
+            
+            return response.data;
+        } catch (error) {
+            console.error('Google Drive download error:', error);
+            throw new Error(`Failed to download file: ${error.message}`);
+        }
+    }
+
+    // Get direct download URL
+    async getDownloadUrl(fileId) {
+        try {
+            await this.ensureInitialized();
+            
+            const response = await this.drive.files.get({
+                fileId: fileId,
+                fields: 'webContentLink',
+                supportsAllDrives: true
+            });
+            
+            return response.data.webContentLink;
+        } catch (error) {
+            console.error('Failed to get download URL:', error);
+            throw error;
         }
     }
 }

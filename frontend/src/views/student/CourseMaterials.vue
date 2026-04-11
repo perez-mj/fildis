@@ -1,5 +1,5 @@
 <!-- frontend/src/views/student/CourseMaterials.vue -->
- <template>
+<template>
   <v-container fluid>
     <v-row class="mb-6">
       <v-col cols="12">
@@ -119,7 +119,7 @@
                   Uploaded by {{ material.uploadedBy?.firstName }} {{ material.uploadedBy?.lastName }}
                   • {{ formatDate(material.createdAt) }}
                   • {{ formatFileSize(material.fileSize) }}
-                  • {{ material.views }} views
+                  • {{ material.views || 0 }} views
                 </div>
                 <div class="text-body-2 mt-1" v-if="material.description">
                   {{ material.description }}
@@ -244,7 +244,7 @@ const filteredMaterials = computed(() => {
       filtered.sort((a, b) => b.title.localeCompare(a.title))
       break
     case 'views':
-      filtered.sort((a, b) => b.views - a.views)
+      filtered.sort((a, b) => (b.views || 0) - (a.views || 0))
       break
   }
   
@@ -289,12 +289,14 @@ const getFileTypeColor = (fileType) => {
 }
 
 const trackView = async (material) => {
-  // View tracking is handled by the backend when accessing the material
-  console.log('View tracked for:', material.title)
+  await materialStore.trackView(material._id)
+  // Open the link after tracking
+  window.open(material.webViewLink, '_blank')
 }
 
 const trackDownload = async (material) => {
   await materialStore.trackDownload(material._id)
+  window.open(material.webContentLink, '_blank')
 }
 
 const clearFilters = () => {
@@ -305,7 +307,10 @@ const clearFilters = () => {
 const loadCourseAndMaterials = async () => {
   loading.value = true
   try {
+    // Fetch course details
     course.value = await studentStore.fetchCourseDetails(courseId)
+    
+    // Fetch materials for this course
     materials.value = await materialStore.fetchCourseMaterials(courseId)
   } catch (error) {
     console.error('Failed to load course materials:', error)

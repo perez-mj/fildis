@@ -29,6 +29,7 @@ export const useMaterialStore = defineStore('material', {
         return materials
       } catch (error) {
         this.error = error.response?.data?.message || 'Failed to fetch materials'
+        console.error('Error fetching materials:', error)
         throw error
       } finally {
         this.loading = false
@@ -55,6 +56,14 @@ export const useMaterialStore = defineStore('material', {
         await materialService.trackDownload(materialId)
       } catch (error) {
         console.error('Failed to track download:', error)
+      }
+    },
+
+    async trackView(materialId) {
+      try {
+        await materialService.trackView(materialId)
+      } catch (error) {
+        console.error('Failed to track view:', error)
       }
     },
 

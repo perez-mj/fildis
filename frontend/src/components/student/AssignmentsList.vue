@@ -4,11 +4,7 @@
     <v-col cols="12">
       <v-card class="rounded-lg" elevation="2">
         <v-list v-if="assignments.length > 0" lines="two">
-          <v-list-item
-            v-for="assignment in assignments"
-            :key="assignment._id"
-            class="assignment-item"
-          >
+          <v-list-item v-for="assignment in assignments" :key="assignment._id" class="assignment-item">
             <template v-slot:prepend>
               <v-avatar size="48" :color="getAssignmentColor(assignment)" variant="tonal">
                 <v-icon size="28">{{ getAssignmentIcon(assignment) }}</v-icon>
@@ -17,30 +13,32 @@
 
             <v-list-item-title class="font-weight-medium">
               {{ assignment.title }}
-              <v-chip
-                v-if="assignment.submission?.isLate"
-                size="x-small"
-                color="error"
-                class="ml-2"
-              >
+              <v-chip v-if="assignment.submission?.isLate" size="x-small" color="error" class="ml-2">
                 Late
               </v-chip>
-              <v-chip
-                v-if="assignment.submission?.status === 'graded'"
-                size="x-small"
-                color="success"
-                class="ml-2"
-              >
+              <v-chip v-if="assignment.submission?.status === 'graded'" size="x-small" color="success" class="ml-2">
                 Graded
               </v-chip>
             </v-list-item-title>
-            
+
             <v-list-item-subtitle>
               <div class="text-caption">
                 {{ assignment.courseId?.courseCode }} - {{ assignment.courseId?.courseName }}
               </div>
               <div class="text-body-2 mt-1">
                 {{ assignment.description }}
+              </div>
+              <div v-if="assignment.attachments && assignment.attachments.length > 0" class="mt-1">
+                <div class="d-flex align-center">
+                  <v-icon size="16" class="mr-1">mdi-attachment</v-icon>
+                  <span class="text-caption text-medium-emphasis">
+                    {{ assignment.attachments.length }} attachment(s)
+                  </span>
+                  <v-btn variant="text" size="x-small" color="primary" class="ml-2"
+                    @click.stop="showAttachments(assignment)">
+                    View
+                  </v-btn>
+                </div>
               </div>
               <div class="text-caption mt-1">
                 Due: {{ formatDate(assignment.dueDate) }}
@@ -52,40 +50,21 @@
             </v-list-item-subtitle>
 
             <template v-slot:append>
-              <v-btn
-                v-if="!assignment.submission && canSubmit(assignment)"
-                color="primary"
-                variant="flat"
-                size="small"
-                :to="{ name: 'SubmitAssignment', params: { assignmentId: assignment._id } }"
-              >
+              <v-btn v-if="!assignment.submission && canSubmit(assignment)" color="primary" variant="flat" size="small"
+                :to="{ name: 'SubmitAssignment', params: { assignmentId: assignment._id } }">
                 Submit
               </v-btn>
               <v-btn
                 v-else-if="assignment.submission && assignment.submission.status !== 'graded' && canResubmit(assignment)"
-                color="warning"
-                variant="tonal"
-                size="small"
-                :to="{ name: 'SubmitAssignment', params: { assignmentId: assignment._id } }"
-              >
+                color="warning" variant="tonal" size="small"
+                :to="{ name: 'SubmitAssignment', params: { assignmentId: assignment._id } }">
                 Resubmit
               </v-btn>
-              <v-btn
-                v-else-if="assignment.submission?.status === 'graded'"
-                color="info"
-                variant="tonal"
-                size="small"
-                @click="viewGrade(assignment)"
-              >
+              <v-btn v-else-if="assignment.submission?.status === 'graded'" color="info" variant="tonal" size="small"
+                @click="viewGrade(assignment)">
                 View Grade
               </v-btn>
-              <v-btn
-                v-else
-                color="grey"
-                variant="tonal"
-                size="small"
-                disabled
-              >
+              <v-btn v-else color="grey" variant="tonal" size="small" disabled>
                 Closed
               </v-btn>
             </template>
@@ -159,6 +138,14 @@ const canResubmit = (assignment) => {
 
 const viewGrade = (assignment) => {
   router.push({ name: 'MyGrades' })
+}
+
+const showAttachments = (assignment) => {
+  // Open attachments in a new window or show dialog
+  if (assignment.attachments && assignment.attachments.length > 0) {
+    // Open the first attachment or show a dialog
+    window.open(assignment.attachments[0].webViewLink, '_blank')
+  }
 }
 </script>
 

@@ -37,6 +37,38 @@
               <div class="text-body-2">{{ assignment?.instructions || 'No specific instructions provided.' }}</div>
             </div>
 
+            <!-- Teacher's Attachments -->
+            <div class="mb-4" v-if="assignment?.attachments && assignment.attachments.length > 0">
+              <div class="text-subtitle-2 font-weight-medium mb-2">Assignment Attachments</div>
+              <v-list density="compact" class="bg-grey-lighten-1 rounded">
+                <v-list-item
+                  v-for="(attachment, index) in assignment.attachments"
+                  :key="index"
+                  :href="attachment.webViewLink"
+                  target="_blank"
+                  class="attachment-item"
+                >
+                  <template v-slot:prepend>
+                    <v-icon :color="getFileTypeColor(attachment.fileType)" size="24">
+                      {{ getFileIcon(attachment.fileType) }}
+                    </v-icon>
+                  </template>
+                  <v-list-item-title class="text-caption">
+                    {{ attachment.originalFileName || attachment.fileName }}
+                  </v-list-item-title>
+                  <template v-slot:append>
+                    <v-btn
+                      :href="attachment.webContentLink"
+                      target="_blank"
+                      variant="text"
+                      size="small"
+                      icon="mdi-download"
+                    ></v-btn>
+                  </template>
+                </v-list-item>
+              </v-list>
+            </div>
+
             <v-divider class="my-3"></v-divider>
 
             <div class="mb-2">
@@ -83,7 +115,7 @@
             <div class="mb-2">
               <div class="text-subtitle-2 font-weight-medium">Status</div>
               <v-chip :color="getSubmissionStatusColor(existingSubmission.status)" size="small">
-                {{ existingSubmission.status.toUpperCase() }}
+                {{ existingSubmission.status?.toUpperCase() || 'SUBMITTED' }}
               </v-chip>
             </div>
 
@@ -92,26 +124,53 @@
               <div class="text-body-2">{{ formatDate(existingSubmission.submissionDate) }}</div>
             </div>
 
-            <div class="mb-2">
+            <div class="mb-2" v-if="existingSubmission.submittedFiles?.length">
               <div class="text-subtitle-2 font-weight-medium">Submitted Files</div>
-              <v-list density="compact">
+              <v-list density="compact" class="bg-grey-lighten-1 rounded mt-1">
                 <v-list-item
-                  v-for="file in existingSubmission.submittedFiles"
-                  :key="file._id"
+                  v-for="(file, idx) in existingSubmission.submittedFiles"
+                  :key="idx"
                   :href="file.webViewLink"
                   target="_blank"
                 >
                   <template v-slot:prepend>
-                    <v-icon size="24">mdi-file</v-icon>
+                    <v-icon size="20">mdi-file</v-icon>
                   </template>
-                  <v-list-item-title>{{ file.originalFileName }}</v-list-item-title>
+                  <v-list-item-title class="text-caption">
+                    {{ file.originalFileName || file.fileName }}
+                  </v-list-item-title>
+                  <template v-slot:append>
+                    <v-chip size="x-small" color="info">
+                      {{ formatFileSize(file.fileSize) }}
+                    </v-chip>
+                  </template>
                 </v-list-item>
               </v-list>
             </div>
 
             <div v-if="existingSubmission.comments" class="mb-2">
               <div class="text-subtitle-2 font-weight-medium">Your Comments</div>
-              <div class="text-body-2">{{ existingSubmission.comments }}</div>
+              <div class="text-body-2 pa-2 bg-grey-lighten-5 rounded-lg">
+                {{ existingSubmission.comments }}
+              </div>
+            </div>
+
+            <!-- Show Grade if available -->
+            <div v-if="existingSubmission.grade" class="mt-3">
+              <v-divider class="mb-2"></v-divider>
+              <div class="text-subtitle-2 font-weight-medium">Grade Received</div>
+              <div class="d-flex align-center mt-1">
+                <v-chip :color="getGradeColor(existingSubmission.grade.score)" size="large">
+                  {{ existingSubmission.grade.score }}/{{ assignment?.maxScore }}
+                  ({{ getPercentage(existingSubmission.grade.score, assignment?.maxScore) }}%)
+                </v-chip>
+              </div>
+              <div v-if="existingSubmission.grade.feedback" class="mt-2">
+                <div class="text-subtitle-2 font-weight-medium">Feedback</div>
+                <div class="text-body-2 pa-2 bg-grey-lighten-5 rounded-lg">
+                  {{ existingSubmission.grade.feedback }}
+                </div>
+              </div>
             </div>
           </v-card-text>
         </v-card>
@@ -121,12 +180,21 @@
       <v-col cols="12" lg="7">
         <v-card class="rounded-lg" elevation="2">
           <v-card-title class="text-h6 font-weight-bold">
-            {{ existingSubmission ? 'Update Submission' : 'Submit Assignment' }}
+            {{ existingSubmission && existingSubmission.grade ? 'Assignment Already Graded' : (existingSubmission ? 'Update Submission' : 'Submit Assignment') }}
           </v-card-title>
           <v-divider></v-divider>
           <v-card-text>
             <v-alert
-              v-if="!canSubmit"
+              v-if="existingSubmission && existingSubmission.grade"
+              type="success"
+              variant="tonal"
+              class="mb-4"
+            >
+              This assignment has been graded. You cannot make changes to your submission.
+            </v-alert>
+
+            <v-alert
+              v-else-if="!canSubmit"
               type="warning"
               variant="tonal"
               class="mb-4"
@@ -135,7 +203,7 @@
               {{ formatDate(assignment?.availableFrom) }} to {{ formatDate(assignment?.availableUntil) }}.
             </v-alert>
 
-            <v-form ref="form" v-model="valid">
+            <v-form ref="form" v-model="valid" v-else>
               <v-file-input
                 v-model="files"
                 :label="existingSubmission ? 'Add More Files' : 'Upload Files'"
@@ -146,7 +214,7 @@
                 variant="outlined"
                 show-size
                 counter
-                :disabled="!canSubmit"
+                :disabled="!canSubmit || (existingSubmission && existingSubmission.grade)"
               >
                 <template v-slot:selection="{ fileNames }">
                   <template v-for="fileName in fileNames" :key="fileName">
@@ -163,7 +231,7 @@
                 placeholder="Add any comments for the teacher..."
                 variant="outlined"
                 rows="4"
-                :disabled="!canSubmit"
+                :disabled="!canSubmit || (existingSubmission && existingSubmission.grade)"
               ></v-textarea>
 
               <div class="d-flex justify-space-between mt-4">
@@ -178,7 +246,7 @@
                   color="primary"
                   variant="flat"
                   :loading="submitting"
-                  :disabled="!valid || !canSubmit"
+                  :disabled="!valid || !canSubmit || (existingSubmission && existingSubmission.grade)"
                   @click="submitAssignment"
                 >
                   {{ existingSubmission ? 'Update Submission' : 'Submit Assignment' }}
@@ -219,8 +287,8 @@ const isOverdue = computed(() => {
 const canSubmit = computed(() => {
   if (!assignment.value) return false
   const now = new Date()
-  const availableFrom = new Date(assignment.value.availableFrom)
-  const availableUntil = new Date(assignment.value.availableUntil)
+  const availableFrom = new Date(assignment.value.availableFrom || assignment.value.createdAt)
+  const availableUntil = new Date(assignment.value.availableUntil || assignment.value.dueDate)
   return now >= availableFrom && now <= availableUntil
 })
 
@@ -265,21 +333,78 @@ const formatFileSize = (bytes) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
+const getFileIcon = (fileType) => {
+  const icons = {
+    pdf: 'mdi-file-pdf-box',
+    doc: 'mdi-file-word-box',
+    docx: 'mdi-file-word-box',
+    ppt: 'mdi-file-powerpoint-box',
+    pptx: 'mdi-file-powerpoint-box',
+    xls: 'mdi-file-excel-box',
+    xlsx: 'mdi-file-excel-box',
+    zip: 'mdi-folder-zip',
+    rar: 'mdi-folder-zip',
+    jpg: 'mdi-file-image',
+    png: 'mdi-file-image',
+    mp4: 'mdi-video-box',
+    mp3: 'mdi-music-box',
+    txt: 'mdi-file-document',
+    py: 'mdi-language-python',
+    js: 'mdi-language-javascript',
+    java: 'mdi-language-java',
+    default: 'mdi-file'
+  }
+  return icons[fileType?.toLowerCase()] || icons.default
+}
+
+const getFileTypeColor = (fileType) => {
+  const colors = {
+    pdf: 'error',
+    doc: 'primary',
+    docx: 'primary',
+    ppt: 'warning',
+    pptx: 'warning',
+    zip: 'grey',
+    jpg: 'success',
+    png: 'success',
+    mp4: 'info',
+    default: 'primary'
+  }
+  return colors[fileType?.toLowerCase()] || colors.default
+}
+
 const getSubmissionStatusColor = (status) => {
   const colors = {
     submitted: 'info',
     late: 'warning',
-    graded: 'success'
+    graded: 'success',
+    returned: 'primary'
   }
-  return colors[status] || 'grey'
+  return colors[status?.toLowerCase()] || 'grey'
+}
+
+const getGradeColor = (score) => {
+  if (!score) return 'grey'
+  if (score >= 90) return 'success'
+  if (score >= 75) return 'info'
+  if (score >= 60) return 'warning'
+  return 'error'
+}
+
+const getPercentage = (score, maxScore) => {
+  if (!score || !maxScore) return 0
+  return ((score / maxScore) * 100).toFixed(1) + '%'
 }
 
 const loadAssignment = async () => {
   try {
+    // Get assignment details
     assignment.value = await assignmentStore.getAssignment(assignmentId)
-    // Check for existing submission
-    const submissions = await assignmentStore.getMySubmissions()
-    existingSubmission.value = submissions.find(s => s.assignmentId === assignmentId)
+    
+    // Get existing submission if any
+    const submission = await assignmentStore.getMySubmission(assignmentId)
+    existingSubmission.value = submission
+    
     if (existingSubmission.value) {
       comments.value = existingSubmission.value.comments || ''
     }
@@ -316,5 +441,13 @@ onMounted(() => {
 <style scoped>
 .gap-1 {
   gap: 4px;
+}
+
+.attachment-item {
+  transition: background-color 0.2s;
+}
+
+.attachment-item:hover {
+  background-color: rgba(0, 0, 0, 0.04);
 }
 </style>

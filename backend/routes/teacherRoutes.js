@@ -193,7 +193,7 @@ router.post('/courses/:courseId/assignments',
             
             // Upload attachments to Google Drive
             if (req.files && req.files.length > 0) {
-                const driveFiles = await googleDriveService.uploadMultipleFiles(
+                const uploadResult = await googleDriveService.uploadMultipleFiles(
                     req.files,
                     'assignments',
                     { 
@@ -203,19 +203,32 @@ router.post('/courses/:courseId/assignments',
                     }
                 );
 
-                driveFiles.forEach((driveFile, index) => {
-                    attachments.push({
-                        googleDriveFileId: driveFile.fileId,
-                        fileName: driveFile.fileName,
-                        originalFileName: req.files[index].originalname,
-                        fileType: req.files[index].originalname.split('.').pop().toLowerCase(),
-                        fileSize: driveFile.fileSize,
-                        mimeType: driveFile.mimeType,
-                        webViewLink: driveFile.webViewLink,
-                        webContentLink: driveFile.webContentLink,
-                        uploadedAt: new Date()
+                // uploadResult.success contains the array of successfully uploaded files
+                if (uploadResult.success && uploadResult.success.length > 0) {
+                    uploadResult.success.forEach((driveFile, index) => {
+                        // Find the original file that corresponds to this upload
+                        const originalFile = req.files.find((f, i) => 
+                            f.originalname === driveFile.originalName
+                        );
+                        
+                        attachments.push({
+                            googleDriveFileId: driveFile.fileId,
+                            fileName: driveFile.fileName,
+                            originalFileName: driveFile.originalName,
+                            fileType: driveFile.originalName.split('.').pop().toLowerCase(),
+                            fileSize: driveFile.fileSize,
+                            mimeType: driveFile.mimeType,
+                            webViewLink: driveFile.webViewLink,
+                            webContentLink: driveFile.webContentLink,
+                            uploadedAt: new Date()
+                        });
                     });
-                });
+                }
+                
+                // Log any failed uploads
+                if (uploadResult.failed && uploadResult.failed.length > 0) {
+                    console.warn(`${uploadResult.failed.length} file(s) failed to upload to Google Drive`);
+                }
             }
 
             const assignment = new Assignment({

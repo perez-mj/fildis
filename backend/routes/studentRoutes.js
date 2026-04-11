@@ -162,6 +162,76 @@ router.get('/materials/:materialId', async (req, res) => {
     }
 });
 
+// @route   POST /api/student/materials/:materialId/view
+// @desc    Track material view
+// @access  Student (enrolled in course)
+router.post('/materials/:materialId/view', async (req, res) => {
+    try {
+        const material = await Material.findById(req.params.materialId);
+
+        if (!material) {
+            return res.status(404).json({ message: 'Material not found' });
+        }
+
+        // Check if student is enrolled in the course
+        const course = await Course.findOne({
+            _id: material.courseId,
+            students: req.user.id
+        });
+
+        if (!course && !material.isPublic) {
+            return res.status(403).json({ message: 'Not enrolled in this course' });
+        }
+
+        // Increment view count
+        material.views += 1;
+        await material.save();
+
+        res.json({
+            success: true,
+            message: 'View tracked successfully'
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// @route   POST /api/student/materials/:materialId/download
+// @desc    Track material download
+// @access  Student (enrolled in course)
+router.post('/materials/:materialId/download', async (req, res) => {
+    try {
+        const material = await Material.findById(req.params.materialId);
+
+        if (!material) {
+            return res.status(404).json({ message: 'Material not found' });
+        }
+
+        // Check if student is enrolled in the course
+        const course = await Course.findOne({
+            _id: material.courseId,
+            students: req.user.id
+        });
+
+        if (!course && !material.isPublic) {
+            return res.status(403).json({ message: 'Not enrolled in this course' });
+        }
+
+        // Increment download count
+        material.downloads += 1;
+        await material.save();
+
+        res.json({
+            success: true,
+            message: 'Download tracked successfully'
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // ==================== Assignments ====================
 
 // @route   GET /api/student/courses/:courseId/assignments

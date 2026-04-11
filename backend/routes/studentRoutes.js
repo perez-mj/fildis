@@ -350,6 +350,72 @@ router.post('/assignments/:assignmentId/submit',
     }
 );
 
+// ==================== Submissions ====================
+
+// @route   GET /api/student/submissions
+// @desc    Get all submissions for the student
+// @access  Student
+router.get('/submissions', async (req, res) => {
+    try {
+        const submissions = await Submission.find({ 
+            studentId: req.user.id 
+        })
+        .populate({
+            path: 'assignmentId',
+            select: 'title maxScore dueDate availableFrom availableUntil courseId',
+            populate: {
+                path: 'courseId',
+                select: 'courseName courseCode'
+            }
+        })
+        .sort({ submissionDate: -1 });
+
+        res.json({
+            success: true,
+            data: submissions
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// @route   GET /api/student/assignments/:assignmentId/my-submission
+// @desc    Get student's submission for a specific assignment
+// @access  Student
+router.get('/assignments/:assignmentId/my-submission', async (req, res) => {
+    try {
+        const assignment = await Assignment.findById(req.params.assignmentId);
+        
+        if (!assignment) {
+            return res.status(404).json({ message: 'Assignment not found' });
+        }
+
+        // Check if student is enrolled in the course
+        const course = await Course.findOne({
+            _id: assignment.courseId,
+            students: req.user.id
+        });
+
+        if (!course) {
+            return res.status(403).json({ message: 'Not enrolled in this course' });
+        }
+
+        const submission = await Submission.findOne({
+            assignmentId: req.params.assignmentId,
+            studentId: req.user.id
+        });
+
+        res.json({
+            success: true,
+            data: submission || null
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // @route   PUT /api/student/submissions/:submissionId
 // @desc    Update submission (if not graded) with new Google Drive files
 // @access  Student (own submissions only)

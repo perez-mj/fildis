@@ -1,5 +1,5 @@
 <!-- frontend/src/views/teacher/GradeSubmission.vue -->
- <template>
+<template>
   <div class="grade-submission">
     <v-container fluid>
       <!-- Header -->
@@ -16,7 +16,7 @@
                 ></v-btn>
                 <div>
                   <div class="text-overline">Grade Submission</div>
-                  <h1 class="text-h4">{{ submission?.assignmentId?.title }}</h1>
+                  <h1 class="text-h4">{{ submission?.assignmentId?.title || 'Loading...' }}</h1>
                   <div class="text-subtitle-1">
                     Student: {{ submission?.studentId?.firstName }} {{ submission?.studentId?.lastName }}
                   </div>
@@ -30,7 +30,7 @@
       <v-row>
         <!-- Submission Details -->
         <v-col cols="12" md="7">
-          <v-card>
+          <v-card :loading="loading">
             <v-card-title class="text-h6 bg-grey-lighten-3 pa-3">
               <v-icon start icon="mdi-file-document"></v-icon>
               Submission Details
@@ -70,8 +70,8 @@
               <!-- Submitted Files -->
               <div class="mt-4">
                 <h3 class="text-subtitle-1 mb-2">Submitted Files</h3>
-                <v-list>
-                  <v-list-item v-for="(file, index) in submission?.submittedFiles" :key="index">
+                <v-list v-if="submission?.submittedFiles?.length">
+                  <v-list-item v-for="(file, index) in submission.submittedFiles" :key="index">
                     <template v-slot:prepend>
                       <v-icon :icon="getFileIcon(file.fileType)"></v-icon>
                     </template>
@@ -87,6 +87,9 @@
                     </template>
                   </v-list-item>
                 </v-list>
+                <v-alert v-else type="info" variant="tonal" class="mt-2">
+                  No files submitted for this assignment.
+                </v-alert>
               </div>
             </v-card-text>
           </v-card>
@@ -108,7 +111,7 @@
                   type="number"
                   :rules="scoreRules"
                   variant="outlined"
-                  suffix={{submission?.assignmentId?.maxScore}}
+                  :suffix="`/ ${submission?.assignmentId?.maxScore || 100}`"
                   class="mb-4"
                 >
                   <template v-slot:append>
@@ -180,7 +183,7 @@
                   variant="outlined"
                   @click="gradeData.feedback = template"
                 >
-                  {{ template.substring(0, 30) }}...
+                  {{ template.substring(0, 40) }}...
                 </v-chip>
               </v-chip-group>
             </v-card-text>
@@ -192,13 +195,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, onMounted, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useTeacherStore } from '@/stores/teacherStore'
 import teacherService from '@/services/teacherService'
 import { inject } from 'vue'
 
 const route = useRoute()
+const router = useRouter()
 const teacherStore = useTeacherStore()
 const snackbar = inject('snackbar')
 
@@ -213,11 +217,11 @@ const gradeData = ref({
   feedback: ''
 })
 
-const scoreRules = [
-  v => !!v || 'Score is required',
+const scoreRules = computed(() => [
+  v => !!v || v === 0 || 'Score is required',
   v => v >= 0 || 'Score must be at least 0',
   v => v <= (submission.value?.assignmentId?.maxScore || 100) || `Score cannot exceed ${submission.value?.assignmentId?.maxScore}`
-]
+])
 
 const feedbackTemplates = [
   "Great work! Your submission shows good understanding of the concepts.",
@@ -226,7 +230,8 @@ const feedbackTemplates = [
   "Excellent work! You've demonstrated mastery of the topic.",
   "Satisfactory work. Keep up the good effort!",
   "Please improve your submission by adding more details and examples.",
-  "Well organized and clearly presented. Good job!"
+  "Well organized and clearly presented. Good job!",
+  "The submission is incomplete. Please review the requirements and resubmit."
 ]
 
 const getFileIcon = (fileType) => {
@@ -236,7 +241,8 @@ const getFileIcon = (fileType) => {
     docx: 'mdi-file-word-box',
     jpg: 'mdi-file-image-box',
     png: 'mdi-file-image-box',
-    zip: 'mdi-folder-zip'
+    zip: 'mdi-folder-zip',
+    txt: 'mdi-file-document'
   }
   return icons[fileType] || 'mdi-file'
 }
@@ -279,7 +285,7 @@ const submitGrade = async () => {
     
     // Go back after short delay
     setTimeout(() => {
-      $router.back()
+      router.back()
     }, 1500)
   } catch (error) {
     console.error('Failed to grade submission:', error)
@@ -294,30 +300,71 @@ const submitGrade = async () => {
 }
 
 const loadSubmission = async () => {
+  const submissionId = route.params.submissionId
+  
+  if (!submissionId) {
+    console.error('No submission ID provided')
+    snackbar.value = { 
+      show: true, 
+      text: 'Invalid submission ID', 
+      color: 'error' 
+    }
+    return
+  }
+  
   loading.value = true
   try {
-    // Get all submissions for this assignment
-    const assignmentId = route.params.assignmentId || (await getAssignmentId())
-    const submissions = await teacherService.getAssignmentSubmissions(assignmentId)
-    submission.value = submissions.find(s => s._id === route.params.submissionId)
+    // First, get all courses to find which assignment this submission belongs to
+    if (teacherStore.courses.length === 0) {
+      await teacherStore.fetchMyCourses()
+    }
     
-    if (submission.value?.grade) {
+    // Get all assignments from all courses
+    let allSubmissions = []
+    for (const course of teacherStore.courses) {
+      if (course.assignments?.length) {
+        for (const assignment of course.assignments) {
+          try {
+            const submissions = await teacherService.getAssignmentSubmissions(assignment._id)
+            allSubmissions.push(...submissions)
+          } catch (e) {
+            console.error(`Failed to get submissions for assignment ${assignment._id}:`, e)
+          }
+        }
+      }
+    }
+    
+    // Find the specific submission
+    submission.value = allSubmissions.find(s => s._id === submissionId)
+    
+    if (!submission.value) {
+      throw new Error('Submission not found')
+    }
+    
+    // Populate grade data if already graded
+    if (submission.value.grade) {
       gradeData.value.score = submission.value.grade.score
       gradeData.value.feedback = submission.value.grade.feedback || ''
     }
   } catch (error) {
     console.error('Failed to load submission:', error)
+    snackbar.value = { 
+      show: true, 
+      text: error.message || 'Failed to load submission', 
+      color: 'error' 
+    }
   } finally {
     loading.value = false
   }
-}
-
-const getAssignmentId = async () => {
-  // This would need to be implemented based on your data structure
-  return route.params.assignmentId
 }
 
 onMounted(() => {
   loadSubmission()
 })
 </script>
+
+<style scoped>
+.v-list-item {
+  min-height: 60px;
+}
+</style>

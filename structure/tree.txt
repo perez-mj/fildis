@@ -1,4 +1,4 @@
-Directory Tree — Generated on 4/10/2026, 14:11:31
+Directory Tree — Generated on 4/11/2026, 13:54:54
 Root: lms
 
 lms/
@@ -31,8 +31,10 @@ lms/
 │  ├─ scripts/
 │  │  ├─ initDatabase.js
 │  │  └─ resetDatabase.js
-│  └─ services/
-│     └─ googleDriveService.js
+│  ├─ services/
+│  │  └─ googleDriveService.js
+│  └─ utils/
+│     └─ timezone.js
 └─ frontend/
    ├─ index.html
    ├─ jsconfig.json
@@ -71,8 +73,10 @@ lms/
       │     ├─ AnnouncementForm.vue
       │     ├─ AssignmentForm.vue
       │     ├─ AssignmentList.vue
+      │     ├─ CreateAssignmentDialog.vue
       │     ├─ GradeSubmissionForm.vue
-      │     └─ MaterialUploadForm.vue
+      │     ├─ MaterialUploadForm.vue
+      │     └─ PostAnnouncementDialog.vue
       ├─ layouts/
       │  ├─ DashboardLayout.vue
       │  └─ DefaultLayout.vue
@@ -89,6 +93,7 @@ lms/
       │  ├─ courseService.js
       │  ├─ gradeService.js
       │  ├─ materialService.js
+      │  ├─ teacherService.js
       │  └─ userService.js
       ├─ stores/
       │  ├─ announcementStore.js
@@ -97,6 +102,7 @@ lms/
       │  ├─ courseStore.js
       │  ├─ gradeStore.js
       │  ├─ materialStore.js
+      │  ├─ teacherStore.js
       │  └─ userStore.js
       ├─ utils/
       │  ├─ constants.js

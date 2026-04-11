@@ -1,5 +1,5 @@
 <!-- frontend/src/views/teacher/AssignmentSubmissions.vue -->
- <template>
+<template>
   <div class="assignment-submissions">
     <v-container fluid>
       <!-- Header -->
@@ -17,14 +17,14 @@
                   ></v-btn>
                   <div>
                     <div class="text-overline">Assignment Submissions</div>
-                    <h1 class="text-h4">{{ assignment?.title }}</h1>
+                    <h1 class="text-h4">{{ assignment?.title || 'Loading...' }}</h1>
                     <div class="text-subtitle-1">{{ getCourseName() }}</div>
                   </div>
                 </div>
                 <div class="d-flex ga-2 mt-2 mt-sm-0">
                   <v-chip color="info" variant="flat">
                     <v-icon start icon="mdi-star" size="small"></v-icon>
-                    Max Score: {{ assignment?.maxScore }}
+                    Max Score: {{ assignment?.maxScore || 0 }}
                   </v-chip>
                   <v-chip :color="getDueDateColor()" variant="flat">
                     <v-icon start icon="mdi-calendar" size="small"></v-icon>
@@ -134,7 +134,7 @@
 
               <template v-slot:item.status="{ item }">
                 <v-chip :color="getStatusColor(item.status)" size="small">
-                  {{ item.status.toUpperCase() }}
+                  {{ item.status?.toUpperCase() || 'SUBMITTED' }}
                 </v-chip>
               </template>
 
@@ -155,31 +155,20 @@
               <template v-slot:item.grade="{ item }">
                 <div v-if="item.grade">
                   <div class="font-weight-bold">{{ item.grade.score }}/{{ assignment?.maxScore }}</div>
-                  <div class="text-caption text-medium-emphasis">{{ item.grade.feedback?.substring(0, 30) }}...</div>
+                  <div class="text-caption text-medium-emphasis">{{ truncateText(item.grade.feedback, 30) }}</div>
                 </div>
                 <span v-else class="text-caption text-medium-emphasis">Not graded</span>
               </template>
 
               <template v-slot:item.actions="{ item }">
                 <v-btn
-                  v-if="item.status !== 'graded'"
                   color="primary"
                   size="small"
                   variant="text"
                   :to="`/teacher/submissions/${item._id}/grade`"
-                  prepend-icon="mdi-check-circle"
+                  :prepend-icon="item.status === 'graded' ? 'mdi-pencil' : 'mdi-check-circle'"
                 >
-                  Grade
-                </v-btn>
-                <v-btn
-                  v-else
-                  color="warning"
-                  size="small"
-                  variant="text"
-                  :to="`/teacher/submissions/${item._id}/grade`"
-                  prepend-icon="mdi-pencil"
-                >
-                  Regrade
+                  {{ item.status === 'graded' ? 'Regrade' : 'Grade' }}
                 </v-btn>
               </template>
             </v-data-table>
@@ -226,12 +215,15 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useTeacherStore } from '@/stores/teacherStore'
 import teacherService from '@/services/teacherService'
+import { inject } from 'vue'
 
 const route = useRoute()
+const router = useRouter()
 const teacherStore = useTeacherStore()
+const snackbar = inject('snackbar')
 
 const loading = ref(false)
 const assignment = ref(null)
@@ -286,7 +278,7 @@ const filteredSubmissions = computed(() => {
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter(s => 
-      s.studentId?.firstName?.toLowerCase().includes(query) ||
+          s.studentId?.firstName?.toLowerCase().includes(query) ||
       s.studentId?.lastName?.toLowerCase().includes(query) ||
       `${s.studentId?.firstName} ${s.studentId?.lastName}`.toLowerCase().includes(query)
     )
@@ -347,6 +339,11 @@ const getFileIcon = (fileType) => {
   return icons[fileType] || 'mdi-file'
 }
 
+const truncateText = (text, length) => {
+  if (!text) return ''
+  return text.length > length ? text.substring(0, length) + '...' : text
+}
+
 const formatDateTime = (date) => {
   if (!date) return 'N/A'
   return new Date(date).toLocaleString('en-US', {
@@ -371,11 +368,17 @@ const viewFiles = (submission) => {
 }
 
 const exportSubmissions = () => {
+  if (filteredSubmissions.value.length === 0) {
+    snackbar.value = { show: true, text: 'No submissions to export', color: 'warning' }
+    return
+  }
+  
   const csvData = filteredSubmissions.value.map(s => ({
     'Student Name': `${s.studentId?.firstName} ${s.studentId?.lastName}`,
     'Student ID': s.studentId?.studentId,
+    'Email': s.studentId?.email,
     'Submission Date': formatDateTime(s.submissionDate),
-    'Status': s.status.toUpperCase(),
+    'Status': s.status?.toUpperCase() || 'SUBMITTED',
     'Late': s.isLate ? 'Yes' : 'No',
     'Score': s.grade?.score || 'Not graded',
     'Feedback': s.grade?.feedback || 'No feedback'
@@ -386,18 +389,21 @@ const exportSubmissions = () => {
   const url = window.URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `${assignment.value?.title}_submissions.csv`
+  a.download = `${assignment.value?.title || 'assignment'}_submissions.csv`
   a.click()
   window.URL.revokeObjectURL(url)
+  
+  snackbar.value = { show: true, text: 'Export started!', color: 'success' }
 }
 
 const convertToCSV = (data) => {
+  if (data.length === 0) return ''
   const headers = Object.keys(data[0])
   const csvRows = [headers.join(',')]
   
   for (const row of data) {
     const values = headers.map(header => {
-      const val = row[header]
+      const val = row[header] || ''
       return `"${String(val).replace(/"/g, '""')}"`
     })
     csvRows.push(values.join(','))
@@ -408,30 +414,61 @@ const convertToCSV = (data) => {
 
 const loadData = async () => {
   const assignmentId = route.params.assignmentId
+  
+  if (!assignmentId) {
+    console.error('No assignment ID provided')
+    snackbar.value = { 
+      show: true, 
+      text: 'Invalid assignment ID', 
+      color: 'error' 
+    }
+    return
+  }
+  
   loading.value = true
   try {
     // Find assignment in teacherStore courses
+    if (teacherStore.courses.length === 0) {
+      await teacherStore.fetchMyCourses()
+    }
+    
+    // Find the assignment in courses
     for (const course of teacherStore.courses) {
-      const assignmentData = course.assignments?.find(a => a._id === assignmentId)
-      if (assignmentData) {
-        assignment.value = assignmentData
+      const foundAssignment = course.assignments?.find(a => a._id === assignmentId)
+      if (foundAssignment) {
+        assignment.value = foundAssignment
         break
       }
     }
     
+    if (!assignment.value) {
+      throw new Error('Assignment not found')
+    }
+    
+    // Get submissions for this assignment
     const submissionsData = await teacherService.getAssignmentSubmissions(assignmentId)
-    submissions.value = submissionsData
+    submissions.value = submissionsData || []
+    
   } catch (error) {
     console.error('Failed to load submissions:', error)
+    snackbar.value = { 
+      show: true, 
+      text: error.message || 'Failed to load submissions', 
+      color: 'error' 
+    }
   } finally {
     loading.value = false
   }
 }
 
-onMounted(async () => {
-  if (teacherStore.courses.length === 0) {
-    await teacherStore.fetchMyCourses()
-  }
-  await loadData()
+onMounted(() => {
+  loadData()
 })
 </script>
+
+<style scoped>
+.v-data-table :deep(.v-data-table__th) {
+  font-weight: 600;
+  background-color: rgb(var(--v-theme-grey-lighten-4));
+}
+</style>

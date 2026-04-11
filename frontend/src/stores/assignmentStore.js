@@ -12,13 +12,29 @@ export const useAssignmentStore = defineStore('assignment', {
     error: null
   }),
 
+  getters: {
+    pendingAssignments: (state) => {
+      return state.assignments.filter(a => !a.submission && new Date(a.dueDate) > new Date())
+    },
+    getSubmissionsByAssignment: (state) => (assignmentId) => {
+      return state.submissions.filter(s => s.assignmentId === assignmentId)
+    }
+  },
+
   actions: {
     async fetchAssignments(courseId = null) {
       this.loading = true
       try {
-        this.assignments = await assignmentService.getAssignments(courseId)
+        if (courseId) {
+          this.assignments = await assignmentService.getStudentCourseAssignments(courseId)
+        } else {
+          // Fetch assignments from all courses
+          // This would need to be implemented based on your needs
+          this.assignments = []
+        }
       } catch (error) {
         this.error = error.message
+        console.error('Failed to fetch assignments:', error)
       } finally {
         this.loading = false
       }
@@ -32,6 +48,44 @@ export const useAssignmentStore = defineStore('assignment', {
         this.error = error.message
       } finally {
         this.loading = false
+      }
+    },
+
+    async getAssignment(assignmentId) {
+      this.loading = true
+      try {
+        const assignment = await assignmentService.getAssignment(assignmentId)
+        this.currentAssignment = assignment
+        return assignment
+      } catch (error) {
+        this.error = error.response?.data?.message || 'Failed to fetch assignment'
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async getMySubmissions() {
+      this.loading = true
+      try {
+        const submissions = await assignmentService.getMySubmissions()
+        this.submissions = submissions
+        return submissions
+      } catch (error) {
+        this.error = error.response?.data?.message || 'Failed to fetch submissions'
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async getMySubmission(assignmentId) {
+      try {
+        const submission = await assignmentService.getMySubmission(assignmentId)
+        return submission
+      } catch (error) {
+        this.error = error.response?.data?.message || 'Failed to fetch submission'
+        throw error
       }
     },
 
@@ -68,15 +122,13 @@ export const useAssignmentStore = defineStore('assignment', {
         this.error = error.message
         throw error
       }
-    }
-  },
-
-  getters: {
-    pendingAssignments: (state) => {
-      return state.assignments.filter(a => a.status === 'pending')
     },
-    getSubmissionsByAssignment: (state) => (assignmentId) => {
-      return state.submissions.filter(s => s.assignmentId === assignmentId)
+
+    clearAssignments() {
+      this.assignments = []
+      this.submissions = []
+      this.currentAssignment = null
+      this.error = null
     }
   }
 })

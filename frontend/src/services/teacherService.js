@@ -43,6 +43,11 @@ export default {
     return response.data
   },
 
+  async getAssignment(assignmentId) {
+  const response = await api.get(`/teacher/assignments/${assignmentId}`)
+  return response.data.data
+},
+
   // Create assignment
   async createAssignment(courseId, formData) {
     const response = await api.post(`/teacher/courses/${courseId}/assignments`, formData, {
@@ -103,6 +108,6 @@ async deleteAssignment(assignmentId) {
   async getMyAnnouncements() {
     const response = await api.get('/teacher/announcements')
     return response.data.data
-  }
+  },
   
 }

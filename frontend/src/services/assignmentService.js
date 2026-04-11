@@ -12,7 +12,7 @@ const extractId = (id) => {
 };
 
 export default {
-  // Get all assignments for a course
+  // Get all assignments for a course (teacher view)
   async getCourseAssignments(courseId) {
     const id = extractId(courseId);
     if (!id) throw new Error('Invalid course ID');
@@ -20,12 +20,26 @@ export default {
     return response.data.data
   },
 
-  // Get assignment by ID
-  async getAssignment(id) {
-    const assignmentId = extractId(id);
-    if (!assignmentId) throw new Error('Invalid assignment ID');
-    const response = await api.get(`/assignments/${assignmentId}`)
-    return response.data.data
+  // Get assignment by ID (student view)
+  async getAssignment(assignmentId) {
+    const id = extractId(assignmentId);
+    if (!id) throw new Error('Invalid assignment ID');
+    const response = await api.get(`/student/assignments/${id}`);
+    return response.data.data;
+  },
+
+  // Get student's submission for a specific assignment
+  async getMySubmission(assignmentId) {
+    const id = extractId(assignmentId);
+    if (!id) throw new Error('Invalid assignment ID');
+    const response = await api.get(`/student/assignments/${id}/my-submission`);
+    return response.data.data;
+  },
+
+  // Get all my submissions
+  async getMySubmissions() {
+    const response = await api.get('/student/submissions');
+    return response.data.data;
   },
 
   // Submit assignment (student)
@@ -40,17 +54,11 @@ export default {
     return response.data.data
   },
 
-  // Get my submissions (student)
-  async getMySubmissions() {
-    const response = await api.get('/student/submissions')
-    return response.data.data
-  },
-
-  // Get submission by assignment (student)
-  async getMySubmission(assignmentId) {
-    const id = extractId(assignmentId);
-    if (!id) throw new Error('Invalid assignment ID');
-    const response = await api.get(`/student/assignments/${id}/my-submission`)
+  // Get assignments for a course (student view)
+  async getStudentCourseAssignments(courseId) {
+    const id = extractId(courseId);
+    if (!id) throw new Error('Invalid course ID');
+    const response = await api.get(`/student/courses/${id}/assignments`);
     return response.data.data
   }
 }

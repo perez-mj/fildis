@@ -2,24 +2,6 @@
  <template>
   <div class="post-announcement">
     <v-container fluid>
-      <!-- Header -->
-      <v-row>
-        <v-col cols="12">
-          <v-card class="mb-4" color="primary" variant="tonal">
-            <v-card-text class="pa-4">
-              <div class="d-flex align-center">
-                <v-icon icon="mdi-bullhorn" size="32" class="mr-3"></v-icon>
-                <div>
-                  <div class="text-overline">Communication</div>
-                  <h1 class="text-h4">Post Announcement</h1>
-                  <p class="text-subtitle-1 mb-0">Share important updates with your students</p>
-                </div>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
-
       <v-row>
         <v-col cols="12" md="8">
           <v-card>

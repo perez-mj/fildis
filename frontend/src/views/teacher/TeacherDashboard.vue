@@ -2,25 +2,6 @@
 <template>
   <div class="teacher-dashboard">
     <v-container fluid>
-      <!-- Welcome Banner -->
-      <v-row>
-        <v-col cols="12">
-          <v-card class="mb-6" color="primary" variant="tonal">
-            <v-card-text class="pa-6">
-              <div class="d-flex align-center justify-space-between flex-wrap">
-                <div>
-                  <div class="text-overline mb-1">Welcome back, Teacher!</div>
-                  <h1 class="text-h4 mb-2">{{ authStore.userName }}</h1>
-                  <p class="text-subtitle-1 mb-0">Here's what's happening with your courses today.</p>
-                </div>
-                <v-avatar size="80" color="primary" variant="flat" class="mt-2 mt-sm-0">
-                  <v-icon size="48" icon="mdi-teacher"></v-icon>
-                </v-avatar>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
 
       <!-- Stats Cards -->
       <v-row>

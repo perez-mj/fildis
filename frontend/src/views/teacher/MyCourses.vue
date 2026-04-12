@@ -5,7 +5,6 @@
       <v-row>
         <v-col cols="12">
           <div class="d-flex align-center justify-space-between mb-4 flex-wrap">
-            <h1 class="text-h4 font-weight-bold">My Courses</h1>
             <v-text-field
               v-model="searchQuery"
               prepend-inner-icon="mdi-magnify"

@@ -1,16 +1,6 @@
 <!-- frontend/src/views/student/ViewAnnouncements.vue -->
  <template>
   <v-container fluid>
-    <v-row class="mb-6">
-      <v-col cols="12">
-        <div>
-          <h1 class="text-h4 font-weight-bold mb-1">Announcements</h1>
-          <p class="text-subtitle-1 text-medium-emphasis">
-            Stay updated with the latest news and updates
-          </p>
-        </div>
-      </v-col>
-    </v-row>
 
     <!-- Filter Tabs -->
     <v-tabs v-model="tab" color="primary" class="mb-4">

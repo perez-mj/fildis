@@ -10,8 +10,13 @@ class AuthService {
 
   // Logout user
   async logout() {
-    const response = await api.post('/auth/logout')
-    return response.data
+    try {
+      const response = await api.post('/auth/logout')
+      return response.data
+    } catch (error) {
+      console.error('Logout API error:', error)
+      throw error
+    }
   }
 
   // Refresh access token
@@ -40,7 +45,9 @@ class AuthService {
 
   // Set auth header
   setAuthHeader(token) {
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`
+    if (token) {
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`
+    }
   }
 
   // Remove auth header

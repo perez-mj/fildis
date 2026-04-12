@@ -1,11 +1,6 @@
 <!-- frontend/src/views/admin/CourseEnrollment.vue -->
  <template>
   <v-container fluid>
-    <v-row>
-      <v-col cols="12">
-        <h1 class="text-h4 font-weight-bold mb-6">Course Enrollment Management</h1>
-      </v-col>
-    </v-row>
 
     <v-row>
       <!-- Select Course -->

@@ -1,18 +1,6 @@
 <!-- frontend/src/views/student/MyCourses.vue -->
  <template>
   <v-container fluid>
-    <v-row class="mb-6">
-      <v-col cols="12">
-        <div class="d-flex justify-space-between align-center">
-          <div>
-            <h1 class="text-h4 font-weight-bold mb-1">My Courses</h1>
-            <p class="text-subtitle-1 text-medium-emphasis">
-              View all your enrolled courses and access learning materials
-            </p>
-          </div>
-        </div>
-      </v-col>
-    </v-row>
 
     <!-- Search and Filter -->
     <v-row class="mb-4">

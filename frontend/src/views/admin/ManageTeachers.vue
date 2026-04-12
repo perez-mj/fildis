@@ -4,7 +4,6 @@
     <v-row>
       <v-col cols="12">
         <div class="d-flex justify-space-between align-center mb-6">
-          <h1 class="text-h4 font-weight-bold">Manage Teachers</h1>
           <v-btn color="primary" @click="openCreateDialog">
             <v-icon left>mdi-plus</v-icon>
             Add Teacher

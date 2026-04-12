@@ -1,3 +1,4 @@
+<!-- frontend/src/layouts/DefaultLayout.vue -->
 <template>
   <v-app>
     <!-- Simple navbar without sidebar -->

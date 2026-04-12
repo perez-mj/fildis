@@ -1,28 +1,6 @@
 <!-- frontend/src/views/student/StudentDashboard.vue -->
 <template>
   <v-container fluid>
-    <!-- Welcome Section -->
-    <v-row class="mb-6">
-      <v-col cols="12">
-        <v-card class="rounded-lg" elevation="2">
-          <v-card-item>
-            <div class="d-flex align-center">
-              <v-avatar size="64" color="primary" class="mr-4">
-                <v-icon size="32" color="white">mdi-account-circle</v-icon>
-              </v-avatar>
-              <div>
-                <h1 class="text-h4 font-weight-bold mb-1">
-                  Welcome back, {{ authStore.user?.firstName || authStore.user?.name || 'Student' }}!
-                </h1>
-                <p class="text-subtitle-1 text-medium-emphasis mb-0">
-                  Ready to continue your learning journey?
-                </p>
-              </div>
-            </div>
-          </v-card-item>
-        </v-card>
-      </v-col>
-    </v-row>
 
     <!-- Stats Cards -->
     <v-row>

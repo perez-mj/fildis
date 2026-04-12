@@ -8,11 +8,6 @@
           <v-card class="mb-4" color="primary" variant="tonal">
             <v-card-text class="pa-4">
               <div class="d-flex align-center justify-space-between flex-wrap">
-                <div>
-                  <div class="text-overline">Assignment Management</div>
-                  <h1 class="text-h4">Assignments</h1>
-                  <p class="text-subtitle-1 mb-0">Create and manage course assignments</p>
-                </div>
                 <v-btn color="primary" @click="openCreateDialog" class="mt-2 mt-sm-0">
                   <v-icon start icon="mdi-plus-circle"></v-icon>
                   Create Assignment

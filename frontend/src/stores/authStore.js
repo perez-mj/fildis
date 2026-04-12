@@ -16,7 +16,7 @@ export const useAuthStore = defineStore('auth', {
   persist: {
     key: 'lms-auth',
     storage: localStorage,
-    paths: ['user', 'accessToken', 'refreshToken'] // Persist all tokens
+    paths: ['user', 'accessToken', 'refreshToken']
   },
 
   getters: {
@@ -72,7 +72,7 @@ export const useAuthStore = defineStore('auth', {
         
         authService.setAuthHeader(response.accessToken)
         
-        return response
+        return response.accessToken
       } catch (error) {
         this.error = error.response?.data?.message || 'Login failed'
         throw error
@@ -108,15 +108,22 @@ export const useAuthStore = defineStore('auth', {
       try {
         const response = await authService.refreshToken(this.refreshToken)
         
+        // Update tokens
         this.accessToken = response.accessToken
         this.refreshToken = response.refreshToken
         
+        // Update axios header
         authService.setAuthHeader(response.accessToken)
         
-        return response
+        // Return the new access token for the interceptor
+        return response.accessToken
       } catch (error) {
-        // Refresh failed - logout user
-        await this.logout()
+        // Refresh failed - clear state and throw error
+        console.error('Refresh token failed:', error)
+        this.user = null
+        this.accessToken = null
+        this.refreshToken = null
+        authService.removeAuthHeader()
         throw error
       }
     },

@@ -1,18 +1,6 @@
 <!-- frontend/src/views/admin/TeacherAssignment.vue -->
 <template>
   <v-container fluid>
-    <v-row>
-      <v-col cols="12">
-        <div class="d-flex justify-space-between align-center mb-6">
-          <div>
-            <h1 class="text-h4 font-weight-bold">Teacher Assignment</h1>
-            <div class="text-subtitle-1 text-grey mt-1">
-              Assign teachers to courses or change existing assignments
-            </div>
-          </div>
-        </div>
-      </v-col>
-    </v-row>
 
     <!-- Filters -->
     <v-row>

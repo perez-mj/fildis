@@ -4,12 +4,6 @@
     <v-row class="mb-6">
       <v-col cols="12">
         <div class="d-flex justify-space-between align-center">
-          <div>
-            <h1 class="text-h4 font-weight-bold mb-1">My Grades</h1>
-            <p class="text-subtitle-1 text-medium-emphasis">
-              View your grades and feedback across all courses
-            </p>
-          </div>
           <v-chip color="primary" size="large">
             <v-icon start>mdi-chart-line</v-icon>
             Overall Average: {{ summary.overallPercentage }}%

@@ -1,17 +1,6 @@
 <!-- frontend/src/views/admin/AdminDashboard.vue -->
 <template>
   <v-container fluid>
-    <v-row>
-      <v-col cols="12">
-        <div class="d-flex justify-space-between align-center mb-6">
-          <h1 class="text-h4 font-weight-bold">Admin Dashboard</h1>
-          <v-chip color="primary" variant="flat">
-            <v-icon start>mdi-account</v-icon>
-            Welcome, {{ authStore.userName }}
-          </v-chip>
-        </div>
-      </v-col>
-    </v-row>
 
     <!-- Stats Cards -->
     <v-row>

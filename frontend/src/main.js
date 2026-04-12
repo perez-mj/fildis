@@ -19,6 +19,7 @@ import { createApp } from 'vue'
 
 // Styles
 import 'unfonts.css'
+import './assets/main.css'
 
 
 // Create Pinia with persistence

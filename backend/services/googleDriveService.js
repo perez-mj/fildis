@@ -3,6 +3,24 @@ const stream = require('stream');
 const mime = require('mime-types');
 const { initializeDrive, drive: getDrive, FOLDER_IDS: getFolderIds } = require('../config/googleDrive');
 
+let pdfParse;
+try {
+    const pdfModule = require('pdf-parse');
+    pdfParse = pdfModule.default || pdfModule;
+} catch (error) {
+    console.warn('pdf-parse not installed. PDF text extraction will not work.');
+    pdfParse = null;
+}
+
+// Import mammoth for Word documents
+let mammoth;
+try {
+    mammoth = require('mammoth');
+} catch (error) {
+    console.warn('mammoth not installed. Word document extraction will not work.');
+    mammoth = null;
+}
+
 class GoogleDriveService {
     constructor() {
         this.initialized = false;
@@ -30,16 +48,13 @@ class GoogleDriveService {
                 throw new Error(`Folder ID not configured for type: ${folderType}`);
             }
 
-            // Create a readable stream from the file buffer
             const bufferStream = new stream.PassThrough();
             bufferStream.end(file.buffer);
 
-            // Generate unique filename
             const timestamp = Date.now();
             const sanitizedName = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '-');
             const fileName = `${timestamp}-${sanitizedName}`;
 
-            // Upload to Google Drive
             const response = await this.drive.files.create({
                 requestBody: {
                     name: fileName,
@@ -60,7 +75,7 @@ class GoogleDriveService {
                 supportsAllDrives: true
             });
 
-            // Make file accessible (optional)
+            // Make file publicly accessible
             try {
                 await this.drive.permissions.create({
                     fileId: response.data.id,
@@ -72,7 +87,6 @@ class GoogleDriveService {
                 });
             } catch (permError) {
                 console.warn('Could not set public permission:', permError.message);
-                // Not fatal - file still uploaded
             }
 
             return {
@@ -108,7 +122,7 @@ class GoogleDriveService {
         };
     }
 
-    // Delete file from Google Drive
+    // Delete file
     async deleteFile(fileId) {
         try {
             await this.ensureInitialized();
@@ -124,6 +138,209 @@ class GoogleDriveService {
         }
     }
 
+    // Extract text content from file
+    async extractFileContent(fileId, mimeType) {
+        try {
+            await this.ensureInitialized();
+            
+            // For Google Docs
+            if (mimeType === 'application/vnd.google-apps.document') {
+                const response = await this.drive.files.export(
+                    { fileId, mimeType: 'text/plain' },
+                    { responseType: 'stream' }
+                );
+                return await this.streamToString(response.data);
+            }
+            
+            // For regular files - download as stream
+            const response = await this.drive.files.get(
+                { fileId: fileId, alt: 'media' },
+                { responseType: 'stream' }
+            );
+            
+            const buffer = await this.streamToBuffer(response.data);
+            const text = await this.extractTextFromBuffer(buffer, mimeType);
+            return text;
+        } catch (error) {
+            console.error('Text extraction error:', error);
+            throw error;
+        }
+    }
+
+    // Extract text from buffer based on MIME type
+    async extractTextFromBuffer(buffer, mimeType) {
+        try {
+            // PDF files - FIXED: Use pdfParse correctly
+            if (mimeType === 'application/pdf') {
+                if (!pdfParse) {
+                    throw new Error('pdf-parse library not installed. Run: npm install pdf-parse');
+                }
+                const data = await pdfParse(buffer);
+                return data.text || '';
+            } 
+            // Word documents
+            else if (mimeType.includes('word') || mimeType.includes('document')) {
+                if (!mammoth) {
+                    throw new Error('mammoth library not installed. Run: npm install mammoth');
+                }
+                const result = await mammoth.extractRawText({ buffer: buffer });
+                return result.value || '';
+            }
+            // Plain text files
+            else if (mimeType.startsWith('text/')) {
+                return buffer.toString('utf-8');
+            }
+            // PowerPoint files - limited support
+            else if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) {
+                return "NOTE: PowerPoint files have limited text extraction. For best AI results, please export slides as PDF or provide a text document summary.";
+            }
+            // Unsupported format
+            else {
+                return `Text extraction not supported for ${mimeType}. For best results, use PDF or Word documents with selectable text.`;
+            }
+        } catch (error) {
+            console.error('Text extraction from buffer error:', error);
+            throw new Error(`Failed to extract text: ${error.message}`);
+        }
+    }
+
+    // Get content for AI processing
+    async getExtractableContent(fileId, mimeType) {
+        try {
+            const content = await this.extractFileContent(fileId, mimeType);
+            
+            if (!content || content.length < 50) {
+                return {
+                    success: false,
+                    content: null,
+                    length: 0,
+                    error: 'File contains insufficient extractable text (less than 50 characters). Please ensure the file has readable text content, not scanned images.'
+                };
+            }
+            
+            return {
+                success: true,
+                content: content,
+                length: content.length,
+                isExtractable: true
+            };
+        } catch (error) {
+            return {
+                success: false,
+                content: null,
+                length: 0,
+                error: error.message
+            };
+        }
+    }
+
+    // Verify AI can access the file
+    async verifyAIAccess(fileId) {
+        try {
+            await this.ensureInitialized();
+            
+            // First, check if file exists
+            const file = await this.drive.files.get({
+                fileId: fileId,
+                fields: 'id, name, mimeType, size, webViewLink',
+                supportsAllDrives: true
+            });
+            
+            if (!file || !file.data) {
+                return {
+                    canAccess: false,
+                    fileExists: false,
+                    solution: 'File not found in Google Drive'
+                };
+            }
+            
+            // Check if file is publicly accessible
+            const permissions = await this.drive.permissions.list({
+                fileId: fileId,
+                supportsAllDrives: true,
+                fields: 'permissions(id, type, role)'
+            });
+            
+            const hasPublicAccess = permissions.data.permissions?.some(
+                p => p.type === 'anyone' && p.role === 'reader'
+            );
+            
+            if (!hasPublicAccess) {
+                return {
+                    canAccess: false,
+                    fileExists: true,
+                    fileName: file.data.name,
+                    solution: 'Share this file publicly: Right-click file → Share → General access → Anyone with the link → Viewer',
+                    sharingUrl: file.data.webViewLink
+                };
+            }
+            
+            // Check if file type is extractable
+            const mimeType = file.data.mimeType;
+            const isExtractable = this.isExtractableFileType(mimeType);
+            
+            if (!isExtractable) {
+                return {
+                    canAccess: true,
+                    fileExists: true,
+                    fileName: file.data.name,
+                    isExtractable: false,
+                    solution: `File type ${mimeType} cannot be processed for text extraction. Please upload as PDF or Word document.`
+                };
+            }
+            
+            return {
+                canAccess: true,
+                fileExists: true,
+                fileName: file.data.name,
+                isExtractable: true,
+                mimeType: mimeType,
+                fileSize: file.data.size
+            };
+        } catch (error) {
+            console.error('Verify AI access error:', error);
+            return {
+                canAccess: false,
+                error: error.message,
+                solution: 'Check that the file exists and you have permission to access it'
+            };
+        }
+    }
+
+    // Helper: Check if file type supports text extraction
+    isExtractableFileType(mimeType) {
+        const extractableTypes = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'text/plain',
+            'text/html',
+            'application/vnd.google-apps.document'
+        ];
+        
+        return extractableTypes.some(type => mimeType.includes(type));
+    }
+
+    // Helper: Convert stream to string
+    async streamToString(stream) {
+        const chunks = [];
+        return new Promise((resolve, reject) => {
+            stream.on('data', chunk => chunks.push(chunk));
+            stream.on('error', reject);
+            stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+        });
+    }
+
+    // Helper: Convert stream to buffer
+    async streamToBuffer(stream) {
+        const chunks = [];
+        return new Promise((resolve, reject) => {
+            stream.on('data', chunk => chunks.push(chunk));
+            stream.on('error', reject);
+            stream.on('end', () => resolve(Buffer.concat(chunks)));
+        });
+    }
+
     // Get file metadata
     async getFileMetadata(fileId) {
         try {
@@ -135,7 +352,6 @@ class GoogleDriveService {
                 supportsAllDrives: true
             });
             
-            // Parse description if it exists
             let metadata = {};
             if (response.data.description) {
                 try {
@@ -149,100 +365,6 @@ class GoogleDriveService {
         } catch (error) {
             console.error('Google Drive metadata error:', error);
             throw new Error(`Failed to get file metadata: ${error.message}`);
-        }
-    }
-
-    // List files in a folder
-    async listFiles(folderType, query = '', options = {}) {
-        try {
-            await this.ensureInitialized();
-            
-            const folderId = this.FOLDER_IDS[folderType];
-            
-            if (!folderId) {
-                throw new Error(`Folder ID not configured for type: ${folderType}`);
-            }
-
-            let q = `'${folderId}' in parents and trashed=false`;
-            if (query) {
-                q += ` and name contains '${query}'`;
-            }
-            
-            if (options.mimeType) {
-                q += ` and mimeType = '${options.mimeType}'`;
-            }
-
-            const response = await this.drive.files.list({
-                q: q,
-                fields: 'files(id, name, mimeType, size, webViewLink, webContentLink, createdTime, description)',
-                orderBy: options.orderBy || 'createdTime desc',
-                pageSize: options.pageSize || 100,
-                supportsAllDrives: true,
-                includeItemsFromAllDrives: true
-            });
-
-            return response.data.files;
-        } catch (error) {
-            console.error('Google Drive list error:', error);
-            throw new Error(`Failed to list files: ${error.message}`);
-        }
-    }
-
-    // Create folder if needed
-    async createFolder(folderName, parentFolderId = 'root') {
-        try {
-            await this.ensureInitialized();
-            
-            const response = await this.drive.files.create({
-                requestBody: {
-                    name: folderName,
-                    mimeType: 'application/vnd.google-apps.folder',
-                    parents: [parentFolderId]
-                },
-                fields: 'id, name',
-                supportsAllDrives: true
-            });
-            
-            console.log(`📁 Created folder: ${folderName} (${response.data.id})`);
-            return response.data;
-        } catch (error) {
-            console.error('Google Drive folder creation error:', error);
-            throw new Error(`Failed to create folder: ${error.message}`);
-        }
-    }
-
-    // Download file
-    async downloadFile(fileId) {
-        try {
-            await this.ensureInitialized();
-            
-            const response = await this.drive.files.get(
-                { fileId: fileId, alt: 'media' },
-                { responseType: 'stream' }
-            );
-            
-            return response.data;
-        } catch (error) {
-            console.error('Google Drive download error:', error);
-            throw new Error(`Failed to download file: ${error.message}`);
-        }
-    }
-
-    // Get direct download URL
-    async getDownloadUrl(fileId) {
-        try {
-            await this.ensureInitialized();
-            
-            const response = await this.drive.files.get({
-                fileId: fileId,
-                fields: 'webContentLink',
-                supportsAllDrives: true
-            });
-            
-            return response.data.webContentLink;
-        } catch (error) {
-            console.error('Failed to get download URL:', error);
-            throw error;
         }
     }
 }

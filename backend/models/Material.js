@@ -79,6 +79,45 @@ const materialSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.Mixed,
         default: {}
     },
+
+    aiSummary: {
+        summary: { type: String, default: null },
+        generatedAt: { type: Date, default: null },
+        model: { type: String, default: null },
+        source: { type: String, default: null },
+        documentTitle: { type: String, default: null },
+        contentLength: { type: Number, default: null },
+        isPlaceholder: { type: Boolean, default: false },
+        detectedLanguage: { type: String, enum: ['english', 'filipino'], default: 'english' } // ADD THIS
+    },
+
+    aiReviewer: {
+        questions: [{
+            id: Number,
+            type: { type: String, enum: ['multiple_choice', 'true_false', 'short_answer'] },
+            question: String,
+            options: [String],
+            correctAnswer: mongoose.Schema.Types.Mixed,
+            explanation: String
+        }],
+        summary: { type: String, default: null },
+        studyTips: [String],
+        generatedAt: { type: Date, default: null },
+        model: { type: String, default: null },
+        settings: {
+            numQuestions: { type: Number, default: 10 },
+            difficulty: { type: String, enum: ['easy', 'medium', 'hard'], default: 'medium' }
+        },
+        contentLength: { type: Number, default: null },
+        isPlaceholder: { type: Boolean, default: false },
+        detectedLanguage: { type: String, enum: ['english', 'filipino'], default: 'english' } // ADD THIS
+    },
+    
+    aiFeaturesEnabled: {
+        type: Boolean,
+        default: true
+    },
+
     createdAt: {
         type: Date,
         default: Date.now
@@ -90,7 +129,7 @@ const materialSchema = new mongoose.Schema({
 });
 
 // Update timestamp on save
-materialSchema.pre('save', function() {
+materialSchema.pre('save', function () {
     this.updatedAt = Date.now();
 });
 

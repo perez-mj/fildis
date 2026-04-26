@@ -1,89 +1,128 @@
-Directory Tree — Generated on 4/12/2026, 18:43:23
-Root: frontend
+Directory Tree — Generated on 4/25/2026, 11:31:27
+Root: lms
 
-frontend/
-├─ .env
-├─ index.html
-├─ jsconfig.json
+lms/
 ├─ package-lock.json
 ├─ package.json
-├─ vite.config.mjs
-├─ public/
-│  └─ favicon.ico
-└─ src/
-   ├─ App.vue
-   ├─ main.js
-   ├─ assets/
-   │  ├─ logo.png
-   │  └─ main.css
-   ├─ components/
-   │  ├─ admin/
-   │  ├─ auth/
-   │  ├─ common/
-   │  │  ├─ AnnouncementCard.vue
-   │  │  ├─ Navbar.vue
-   │  │  ├─ NavItem.vue
-   │  │  └─ Sidebar.vue
-   │  ├─ student/
-   │  │  ├─ AnnouncementsList.vue
-   │  │  └─ AssignmentsList.vue
-   │  └─ teacher/
-   │     ├─ CreateAssignmentDialog.vue
-   │     └─ PostAnnouncementDialog.vue
-   ├─ layouts/
-   │  ├─ DashboardLayout.vue
-   │  └─ DefaultLayout.vue
-   ├─ plugins/
-   │  ├─ axios.js
-   │  ├─ index.js
-   │  └─ vuetify.js
-   ├─ router/
-   │  └─ index.js
-   ├─ services/
-   │  ├─ announcementService.js
-   │  ├─ assignmentService.js
-   │  ├─ authService.js
-   │  ├─ courseService.js
-   │  ├─ gradeService.js
-   │  ├─ materialService.js
-   │  ├─ teacherService.js
-   │  └─ userService.js
-   ├─ stores/
-   │  ├─ announcementStore.js
-   │  ├─ assignmentStore.js
-   │  ├─ authStore.js
-   │  ├─ courseStore.js
-   │  ├─ gradeStore.js
-   │  ├─ materialStore.js
-   │  ├─ studentStore.js
-   │  ├─ teacherStore.js
-   │  └─ userStore.js
-   └─ views/
-      ├─ ChangePassword.vue
-      ├─ Login.vue
-      ├─ NotFound.vue
-      ├─ Unauthorized.vue
-      ├─ admin/
-      │  ├─ AdminDashboard.vue
-      │  ├─ CourseEnrollment.vue
-      │  ├─ ManageCourses.vue
-      │  ├─ ManageStudents.vue
-      │  ├─ ManageTeachers.vue
-      │  ├─ SchoolAnnouncements.vue
-      │  └─ TeacherAssignment.vue
-      ├─ student/
-      │  ├─ CourseMaterials.vue
-      │  ├─ MyAssignments.vue
-      │  ├─ MyCourses.vue
-      │  ├─ MyGrades.vue
-      │  ├─ StudentDashboard.vue
-      │  ├─ SubmitAssignment.vue
-      │  └─ ViewAnnouncements.vue
-      └─ teacher/
-         ├─ AssignmentSubmissions.vue
-         ├─ CourseMaterials.vue
-         ├─ GradeSubmission.vue
-         ├─ ManageAssignments.vue
-         ├─ MyCourses.vue
-         ├─ PostAnnouncement.vue
-         └─ TeacherDashboard.vue
+├─ backend/
+│  ├─ .env
+│  ├─ google-drive-credentials.json
+│  ├─ package-lock.json
+│  ├─ package.json
+│  ├─ server.js
+│  ├─ config/
+│  │  ├─ db.js
+│  │  ├─ googleDrive.js
+│  │  └─ googleOAuth.js
+│  ├─ middleware/
+│  │  └─ auth.js
+│  ├─ models/
+│  │  ├─ Announcement.js
+│  │  ├─ Assignment.js
+│  │  ├─ Course.js
+│  │  ├─ Material.js
+│  │  ├─ Submission.js
+│  │  └─ User.js
+│  ├─ routes/
+│  │  ├─ adminRoutes.js
+│  │  ├─ aiRoutes.js
+│  │  ├─ announcementRoutes.js
+│  │  ├─ authRoutes.js
+│  │  ├─ studentRoutes.js
+│  │  └─ teacherRoutes.js
+│  ├─ scripts/
+│  │  ├─ getGoogleRefreshToken.js
+│  │  ├─ initDatabase.js
+│  │  └─ resetDatabase.js
+│  └─ services/
+│     ├─ geminiService.js
+│     └─ googleDriveService.js
+└─ frontend/
+   ├─ .env
+   ├─ index.html
+   ├─ jsconfig.json
+   ├─ package-lock.json
+   ├─ package.json
+   ├─ vite.config.mjs
+   ├─ public/
+   │  └─ favicon.ico
+   └─ src/
+      ├─ App.vue
+      ├─ main.js
+      ├─ assets/
+      │  ├─ logo.png
+      │  └─ main.css
+      ├─ components/
+      │  ├─ admin/
+      │  ├─ auth/
+      │  ├─ common/
+      │  │  ├─ AnnouncementCard.vue
+      │  │  ├─ Navbar.vue
+      │  │  ├─ NavItem.vue
+      │  │  └─ Sidebar.vue
+      │  ├─ student/
+      │  │  ├─ AIReviewerPanel.vue
+      │  │  ├─ AISummaryPanel.vue
+      │  │  ├─ AnnouncementsList.vue
+      │  │  └─ AssignmentsList.vue
+      │  └─ teacher/
+      │     ├─ CreateAssignmentDialog.vue
+      │     └─ PostAnnouncementDialog.vue
+      ├─ layouts/
+      │  ├─ DashboardLayout.vue
+      │  └─ DefaultLayout.vue
+      ├─ plugins/
+      │  ├─ axios.js
+      │  ├─ index.js
+      │  └─ vuetify.js
+      ├─ router/
+      │  └─ index.js
+      ├─ services/
+      │  ├─ aiService.js
+      │  ├─ announcementService.js
+      │  ├─ assignmentService.js
+      │  ├─ authService.js
+      │  ├─ courseService.js
+      │  ├─ gradeService.js
+      │  ├─ materialService.js
+      │  ├─ teacherService.js
+      │  └─ userService.js
+      ├─ stores/
+      │  ├─ announcementStore.js
+      │  ├─ assignmentStore.js
+      │  ├─ authStore.js
+      │  ├─ courseStore.js
+      │  ├─ gradeStore.js
+      │  ├─ materialStore.js
+      │  ├─ studentStore.js
+      │  ├─ teacherStore.js
+      │  └─ userStore.js
+      └─ views/
+         ├─ ChangePassword.vue
+         ├─ Login.vue
+         ├─ NotFound.vue
+         ├─ Unauthorized.vue
+         ├─ admin/
+         │  ├─ AdminDashboard.vue
+         │  ├─ CourseEnrollment.vue
+         │  ├─ ManageCourses.vue
+         │  ├─ ManageStudents.vue
+         │  ├─ ManageTeachers.vue
+         │  ├─ SchoolAnnouncements.vue
+         │  └─ TeacherAssignment.vue
+         ├─ student/
+         │  ├─ CourseMaterials.vue
+         │  ├─ MyAssignments.vue
+         │  ├─ MyCourses.vue
+         │  ├─ MyGrades.vue
+         │  ├─ StudentDashboard.vue
+         │  ├─ SubmitAssignment.vue
+         │  └─ ViewAnnouncements.vue
+         └─ teacher/
+            ├─ AssignmentSubmissions.vue
+            ├─ CourseMaterials.vue
+            ├─ GradeSubmission.vue
+            ├─ ManageAssignments.vue
+            ├─ MyCourses.vue
+            ├─ PostAnnouncement.vue
+            └─ TeacherDashboard.vue

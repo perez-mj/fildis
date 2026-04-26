@@ -14,6 +14,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const teacherRoutes = require('./routes/teacherRoutes');
 const studentRoutes = require('./routes/studentRoutes');
 const announcementRoutes = require('./routes/announcementRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 // Import database connection
 const connectDB = require('./config/db');
@@ -41,6 +42,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/teacher', teacherRoutes);
 app.use('/api/student', studentRoutes);
 app.use('/api/announcements', announcementRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

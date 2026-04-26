@@ -153,9 +153,9 @@ const appBarColor = computed(() => {
 })
 
 const shortName = computed(() => {
-  if (authStore.user?.name) {
-    const parts = authStore.user.name.split(' ')
-    return parts[0]
+  if (authStore.user?.name) return authStore.user.name
+  if (authStore.user?.firstName && authStore.user?.lastName) {
+    return `${authStore.user.firstName} ${authStore.user.lastName}`
   }
   return 'User'
 })
@@ -168,6 +168,14 @@ const avatarColor = computed(() => {
     case 'student': return 'success'
     default: return 'primary'
   }
+})
+
+const displayName = computed(() => {
+  if (authStore.user?.name) return authStore.user.name
+  if (authStore.user?.firstName && authStore.user?.lastName) {
+    return `${authStore.user.firstName} ${authStore.user.lastName}`
+  }
+  return 'User'
 })
 
 const getUserInitials = () => {

@@ -119,35 +119,64 @@
                   Uploaded by {{ material.uploadedBy?.firstName }} {{ material.uploadedBy?.lastName }}
                   • {{ formatDate(material.createdAt) }}
                   • {{ formatFileSize(material.fileSize) }}
-                  • {{ material.views || 0 }} views
+                  • {{ material.views || 0 }} views • {{ material.downloads || 0 }} downloads
                 </div>
                 <div class="text-body-2 mt-1" v-if="material.description">
                   {{ material.description }}
                 </div>
+                <div class="mt-1" v-if="material.tags && material.tags.length">
+                  <v-chip
+                    v-for="tag in material.tags.slice(0, 3)"
+                    :key="tag"
+                    size="x-small"
+                    variant="outlined"
+                    class="mr-1"
+                  >
+                    {{ tag }}
+                  </v-chip>
+                  <v-chip
+                    v-if="material.tags.length > 3"
+                    size="x-small"
+                    variant="outlined"
+                  >
+                    +{{ material.tags.length - 3 }}
+                  </v-chip>
+                </div>
               </v-list-item-subtitle>
 
               <template v-slot:append>
-                <v-btn
-                  variant="text"
-                  color="primary"
-                  :href="material.webViewLink"
-                  target="_blank"
-                  prepend-icon="mdi-eye"
-                  class="mr-2"
-                  @click="trackView(material)"
-                >
-                  View
-                </v-btn>
-                <v-btn
-                  variant="text"
-                  color="primary"
-                  :href="material.webContentLink"
-                  target="_blank"
-                  prepend-icon="mdi-download"
-                  @click="trackDownload(material)"
-                >
-                  Download
-                </v-btn>
+                <div class="d-flex align-center">
+                  <v-btn
+                    variant="text"
+                    color="purple"
+                    prepend-icon="mdi-robot"
+                    class="mr-1"
+                    @click.stop="openAIMenu(material)"
+                  >
+                    AI
+                  </v-btn>
+                  <v-btn
+                    variant="text"
+                    color="primary"
+                    :href="material.webViewLink"
+                    target="_blank"
+                    prepend-icon="mdi-eye"
+                    class="mr-1"
+                    @click="trackView(material)"
+                  >
+                    View
+                  </v-btn>
+                  <v-btn
+                    variant="text"
+                    color="primary"
+                    :href="material.webContentLink"
+                    target="_blank"
+                    prepend-icon="mdi-download"
+                    @click="trackDownload(material)"
+                  >
+                    Download
+                  </v-btn>
+                </div>
               </template>
             </v-list-item>
           </v-list>
@@ -171,6 +200,60 @@
       </v-col>
     </v-row>
 
+    <!-- AI Menu Popover -->
+    <v-dialog v-model="showAIMenu" max-width="280px" persistent width="auto">
+      <v-card class="ai-menu-card">
+        <v-card-title class="text-subtitle-1 font-weight-medium pa-3 bg-purple-lighten-5">
+          <v-icon color="purple" class="mr-2">mdi-robot</v-icon>
+          AI Assistant
+          <v-spacer></v-spacer>
+          <v-btn icon="mdi-close" size="small" variant="text" @click="showAIMenu = false"></v-btn>
+        </v-card-title>
+        <v-card-text class="pa-3">
+          <div class="text-caption text-medium-emphasis mb-3">
+            Material: "{{ selectedMaterial?.title }}"
+          </div>
+          <v-btn
+            color="primary"
+            variant="tonal"
+            block
+            class="mb-2"
+            prepend-icon="mdi-text-box"
+            @click="openSummaryPanel"
+          >
+            AI Summary
+          </v-btn>
+          <v-btn
+            color="success"
+            variant="tonal"
+            block
+            prepend-icon="mdi-school"
+            @click="openReviewerPanel"
+          >
+            AI Reviewer
+          </v-btn>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
+    <!-- AI Summary Panel Dialog -->
+    <v-dialog v-model="showSummaryPanel" max-width="650px" persistent>
+      <AISummaryPanel
+        :material-id="selectedMaterial?._id"
+        :material-title="selectedMaterial?.title"
+        @close="showSummaryPanel = false"
+      />
+    </v-dialog>
+
+    <!-- AI Reviewer Panel Dialog -->
+    <v-dialog v-model="showReviewerPanel" max-width="850px" persistent>
+      <AIReviewerPanel
+        :material-id="selectedMaterial?._id"
+        :material-title="selectedMaterial?.title"
+        @close="showReviewerPanel = false"
+      />
+    </v-dialog>
+
     <!-- Loading State -->
     <v-overlay v-model="loading" class="align-center justify-center">
       <v-progress-circular indeterminate size="64" color="primary"></v-progress-circular>
@@ -184,6 +267,8 @@ import { useRoute } from 'vue-router'
 import { useStudentStore } from '@/stores/studentStore'
 import { useMaterialStore } from '@/stores/materialStore'
 import { format } from 'date-fns'
+import AISummaryPanel from '@/components/student/AISummaryPanel.vue'
+import AIReviewerPanel from '@/components/student/AIReviewerPanel.vue'
 
 const route = useRoute()
 const studentStore = useStudentStore()
@@ -194,9 +279,16 @@ const course = ref(null)
 const materials = ref([])
 const loading = ref(false)
 
+// Search/filter/sort
 const search = ref('')
 const filterType = ref(null)
 const sortBy = ref('newest')
+
+// AI state
+const selectedMaterial = ref(null)
+const showAIMenu = ref(false)
+const showSummaryPanel = ref(false)
+const showReviewerPanel = ref(false)
 
 const fileTypes = [
   { title: 'PDF', value: 'pdf' },
@@ -212,7 +304,8 @@ const sortOptions = [
   { title: 'Oldest First', value: 'oldest' },
   { title: 'Title A-Z', value: 'title_asc' },
   { title: 'Title Z-A', value: 'title_desc' },
-  { title: 'Most Views', value: 'views' }
+  { title: 'Most Views', value: 'views' },
+  { title: 'Most Downloads', value: 'downloads' }
 ]
 
 const filteredMaterials = computed(() => {
@@ -246,6 +339,11 @@ const filteredMaterials = computed(() => {
     case 'views':
       filtered.sort((a, b) => (b.views || 0) - (a.views || 0))
       break
+    case 'downloads':
+      filtered.sort((a, b) => (b.downloads || 0) - (a.downloads || 0))
+      break
+    default:
+      filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
   }
   
   return filtered
@@ -268,8 +366,11 @@ const getFileTypeIcon = (fileType) => {
   const icons = {
     pdf: 'mdi-file-pdf-box',
     ppt: 'mdi-file-powerpoint-box',
+    pptx: 'mdi-file-powerpoint-box',
     doc: 'mdi-file-word-box',
+    docx: 'mdi-file-word-box',
     video: 'mdi-video-box',
+    image: 'mdi-image-box',
     link: 'mdi-link-box',
     other: 'mdi-file-box'
   }
@@ -280,8 +381,11 @@ const getFileTypeColor = (fileType) => {
   const colors = {
     pdf: 'error',
     ppt: 'warning',
+    pptx: 'warning',
     doc: 'info',
+    docx: 'info',
     video: 'success',
+    image: 'secondary',
     link: 'primary',
     other: 'grey'
   }
@@ -302,6 +406,22 @@ const trackDownload = async (material) => {
 const clearFilters = () => {
   search.value = ''
   filterType.value = null
+  sortBy.value = 'newest'
+}
+
+const openAIMenu = (material) => {
+  selectedMaterial.value = material
+  showAIMenu.value = true
+}
+
+const openSummaryPanel = () => {
+  showAIMenu.value = false
+  showSummaryPanel.value = true
+}
+
+const openReviewerPanel = () => {
+  showAIMenu.value = false
+  showReviewerPanel.value = true
 }
 
 const loadCourseAndMaterials = async () => {
@@ -327,10 +447,34 @@ onMounted(() => {
 <style scoped>
 .material-item {
   transition: background-color 0.2s;
-  cursor: pointer;
 }
 
 .material-item:hover {
   background-color: rgba(0, 0, 0, 0.04);
+}
+
+.ai-menu-card {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+:deep(.v-list-item__append) {
+  flex-shrink: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  :deep(.v-list-item__prepend) {
+    min-width: 56px;
+  }
+  
+  :deep(.v-btn) {
+    min-width: 40px;
+    padding: 0 8px;
+  }
+  
+  :deep(.v-btn .v-btn__prepend) {
+    margin-right: 4px;
+  }
 }
 </style>

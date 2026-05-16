@@ -206,6 +206,38 @@
       </v-list>
     </template>
   </v-navigation-drawer>
+
+  <!-- Logout Confirmation Dialog -->
+  <v-dialog v-model="showLogoutDialog" max-width="400" persistent>
+    <v-card>
+      <v-card-title class="text-h5">
+        <v-icon color="error" start>mdi-logout</v-icon>
+        Confirm Logout
+      </v-card-title>
+      
+      <v-card-text class="pt-4">
+        Are you sure you want to logout?
+      </v-card-text>
+      
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn
+          variant="text"
+          @click="showLogoutDialog = false"
+        >
+          Cancel
+        </v-btn>
+        <v-btn
+          color="error"
+          variant="flat"
+          @click="confirmLogout"
+          :loading="logoutLoading"
+        >
+          Logout
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script setup>
@@ -225,6 +257,8 @@ const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 const { mobile } = useDisplay()
+const showLogoutDialog = ref(false)
+const logoutLoading = ref(false)
 
 const drawer = computed({
   get: () => props.modelValue,
@@ -313,10 +347,22 @@ const closeDrawerOnMobile = () => {
   }
 }
 
-const handleLogout = async () => {
+const handleLogout = () => {
   closeDrawer()
-  await authStore.logout()
-  router.push('/login')
+  showLogoutDialog.value = true
+}
+
+const confirmLogout = async () => {
+  logoutLoading.value = true
+  try {
+    await authStore.logout()
+    router.push('/login')
+  } catch (error) {
+    console.error('Logout failed:', error)
+  } finally {
+    logoutLoading.value = false
+    showLogoutDialog.value = false
+  }
 }
 </script>
 

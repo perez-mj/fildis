@@ -11,9 +11,31 @@ import 'vuetify/styles'
 // Composables
 import { createVuetify } from 'vuetify'
 
-// https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
 export default createVuetify({
   theme: {
-    defaultTheme: 'system',
+    defaultTheme: 'light',
+    themes: {
+      light: {
+        dark: false,
+        colors: {
+          primary: '#6366F1',      // Calm indigo
+          secondary: '#10B981',    // Serene green
+          info: '#3B82F6',         // Soft blue
+          warning: '#F59E0B',      // Warm amber
+          error: '#EF4444',        // Gentle red
+          success: '#10B981',      // Matching secondary
+          background: '#F9FAFB',   // Off-white background
+          surface: '#FFFFFF',      // White surfaces
+        }
+      }
+    }
   },
+  defaults: {
+    VBtn: {
+      style: 'text-transform: none;',
+    },
+    VCard: {
+      elevation: 0,
+    },
+  }
 })

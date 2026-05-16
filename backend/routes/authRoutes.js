@@ -9,7 +9,7 @@ const { protect } = require('../middleware/auth');
 // Generate Access Token (short-lived)
 const generateAccessToken = (userId) => {
     return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
-        expiresIn: '15m' // 15 minutes for access token
+        expiresIn: '30m' 
     });
 };
 
@@ -73,33 +73,38 @@ router.post('/login', async (req, res) => {
 router.post('/refresh', async (req, res) => {
     try {
         const { refreshToken } = req.body;
-
+        
+        console.log('Refresh attempt with token:', refreshToken ? 'present' : 'missing');
+        
         if (!refreshToken) {
             return res.status(401).json({ message: 'Refresh token required' });
         }
-
+        
         // Find user with this refresh token
         const user = await User.findOne({ refreshToken });
-
+        
         if (!user) {
+            console.log('No user found with refresh token');
             return res.status(403).json({ message: 'Invalid refresh token' });
         }
-
+        
+        console.log('User found, generating new tokens for:', user.email);
+        
         // Generate new tokens
         const newAccessToken = generateAccessToken(user._id);
         const newRefreshToken = generateRefreshToken();
-
+        
         // Update refresh token in database
         user.refreshToken = newRefreshToken;
         await user.save();
-
+        
         res.json({
             success: true,
             accessToken: newAccessToken,
             refreshToken: newRefreshToken
         });
     } catch (error) {
-        console.error(error);
+        console.error('Refresh error:', error);
         res.status(500).json({ message: 'Server error: ' + error.message });
     }
 });

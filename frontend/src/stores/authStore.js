@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import authService from '@/services/authService'
 
 export const useAuthStore = defineStore('auth', {
-  state: () => ({
+    state: () => ({
     user: null,
     accessToken: null,
     refreshToken: null,
@@ -12,7 +12,6 @@ export const useAuthStore = defineStore('auth', {
     returnUrl: null
   }),
 
-  // Enable persistence
   persist: {
     key: 'lms-auth',
     storage: localStorage,
@@ -70,9 +69,10 @@ export const useAuthStore = defineStore('auth', {
         this.accessToken = response.accessToken
         this.refreshToken = response.refreshToken
         
+        // Set auth header for future requests
         authService.setAuthHeader(response.accessToken)
         
-        return response.accessToken
+        return response
       } catch (error) {
         this.error = error.response?.data?.message || 'Login failed'
         throw error
@@ -81,22 +81,27 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    async logout() {
+        async logout() {
       this.loading = true
       
       try {
+        // Only call logout API if we have a valid token
         if (this.accessToken) {
-          await authService.logout()
+          await authService.logout().catch(e => console.warn('Logout API error:', e))
         }
       } catch (error) {
         console.error('Logout error:', error)
       } finally {
+        // Clear all state regardless of API success
         this.user = null
         this.accessToken = null
         this.refreshToken = null
         this.returnUrl = null
         authService.removeAuthHeader()
         this.loading = false
+        
+        // Clear any pending requests
+        localStorage.removeItem('lms-auth')
       }
     },
 
@@ -115,11 +120,9 @@ export const useAuthStore = defineStore('auth', {
         // Update axios header
         authService.setAuthHeader(response.accessToken)
         
-        // Return the new access token for the interceptor
         return response.accessToken
       } catch (error) {
-        // Refresh failed - clear state and throw error
-        console.error('Refresh token failed:', error)
+        // Clear state on refresh failure
         this.user = null
         this.accessToken = null
         this.refreshToken = null

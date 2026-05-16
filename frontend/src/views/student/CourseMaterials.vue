@@ -1,54 +1,64 @@
 <!-- frontend/src/views/student/CourseMaterials.vue -->
 <template>
-  <v-container fluid>
+  <v-container fluid class="course-materials-container">
+    <!-- Course Header with accent -->
     <v-row class="mb-6">
       <v-col cols="12">
-        <div class="d-flex justify-space-between align-center">
-          <div>
-            <v-btn
-              variant="text"
-              :to="{ name: 'StudentCourses' }"
-              class="mb-2"
-              prepend-icon="mdi-arrow-left"
-            >
-              Back to Courses
-            </v-btn>
-            <h1 class="text-h4 font-weight-bold mb-1">{{ course?.courseName }}</h1>
-            <p class="text-subtitle-1 text-medium-emphasis">
-              {{ course?.courseCode }} - Learning Materials
-            </p>
+        <div class="course-header">
+          <v-btn
+            variant="text"
+            :to="{ name: 'StudentCourses' }"
+            class="back-btn mb-3"
+            prepend-icon="mdi-arrow-left"
+            size="small"
+          >
+            Back to Courses
+          </v-btn>
+          
+          <div class="course-title-section">
+            <div>
+              <h1 class="text-h4 font-weight-light course-title">{{ course?.courseName }}</h1>
+              <div class="title-accent"></div>
+              <p class="text-subtitle-1 text-medium-emphasis mt-2">
+                {{ course?.courseCode }} • Learning Materials
+              </p>
+            </div>
+            <v-chip color="primary" variant="tonal" size="large" class="material-count-chip">
+              <v-icon start size="20">mdi-folder-outline</v-icon>
+              {{ materials.length }} Materials
+            </v-chip>
           </div>
-          <v-chip color="primary" size="large">
-            <v-icon start>mdi-folder</v-icon>
-            {{ materials.length }} Materials
-          </v-chip>
         </div>
       </v-col>
     </v-row>
 
-    <!-- Course Info Card -->
+    <!-- Course Info Card - Minimalist -->
     <v-row>
       <v-col cols="12">
-        <v-card class="rounded-lg mb-4" elevation="2">
-          <v-card-text>
+        <v-card class="rounded-xl mb-6 info-card" elevation="0" variant="tonal">
+          <v-card-text class="pa-4 pa-md-6">
             <v-row>
               <v-col cols="12" md="8">
-                <div class="text-body-1">{{ course?.description }}</div>
-                <div class="mt-3">
-                  <v-chip size="small" class="mr-2">Credits: {{ course?.credits }}</v-chip>
-                  <v-chip size="small" class="mr-2">Semester: {{ course?.semester }}</v-chip>
-                  <v-chip size="small">Department: {{ course?.department }}</v-chip>
+                <p class="text-body-1 text-medium-emphasis mb-3">{{ course?.description }}</p>
+                <div class="d-flex flex-wrap gap-2">
+                  <v-chip size="small" variant="outlined">Credits: {{ course?.credits }}</v-chip>
+                  <v-chip size="small" variant="outlined">Semester: {{ course?.semester }}</v-chip>
+                  <v-chip size="small" variant="outlined">Department: {{ course?.department }}</v-chip>
                 </div>
               </v-col>
               <v-col cols="12" md="4">
-                <div class="text-subtitle-2 font-weight-medium">Teacher</div>
-                <div class="d-flex align-center mt-1">
-                  <v-avatar size="32" class="mr-2">
-                    <v-icon>mdi-account-circle</v-icon>
-                  </v-avatar>
-                  <div>
-                    <div>{{ course?.teacher?.firstName }} {{ course?.teacher?.lastName }}</div>
-                    <div class="text-caption text-medium-emphasis">{{ course?.teacher?.email }}</div>
+                <div class="teacher-info">
+                  <div class="text-subtitle-2 font-weight-medium text-medium-emphasis">Instructor</div>
+                  <div class="d-flex align-center mt-2">
+                    <v-avatar size="36" color="primary" variant="tonal">
+                      <v-icon size="20">mdi-account</v-icon>
+                    </v-avatar>
+                    <div class="ml-2">
+                      <div class="text-body-2 font-weight-medium">
+                        {{ course?.teacher?.firstName }} {{ course?.teacher?.lastName }}
+                      </div>
+                      <div class="text-caption text-medium-emphasis">{{ course?.teacher?.email }}</div>
+                    </div>
                   </div>
                 </div>
               </v-col>
@@ -58,9 +68,9 @@
       </v-col>
     </v-row>
 
-    <!-- Materials Filter -->
+    <!-- Materials Filter - Minimalist -->
     <v-row class="mb-4">
-      <v-col cols="12" md="6">
+      <v-col cols="12" md="5">
         <v-text-field
           v-model="search"
           label="Search materials"
@@ -69,6 +79,7 @@
           density="comfortable"
           clearable
           hide-details
+          class="search-field"
         ></v-text-field>
       </v-col>
       <v-col cols="12" md="3">
@@ -94,131 +105,118 @@
       </v-col>
     </v-row>
 
-    <!-- Materials List -->
+    <!-- Materials List - Clean Cards -->
     <v-row>
       <v-col cols="12">
-        <v-card class="rounded-lg" elevation="2">
-          <v-list v-if="filteredMaterials.length > 0" lines="two">
-            <v-list-item
-              v-for="material in filteredMaterials"
-              :key="material._id"
-              class="material-item"
-            >
-              <template v-slot:prepend>
-                <v-avatar size="48" :color="getFileTypeColor(material.fileType)" variant="tonal">
-                  <v-icon size="28">{{ getFileTypeIcon(material.fileType) }}</v-icon>
-                </v-avatar>
-              </template>
-
-              <v-list-item-title class="font-weight-medium">
-                {{ material.title }}
-              </v-list-item-title>
+        <div v-if="filteredMaterials.length > 0" class="materials-grid">
+          <v-card
+            v-for="material in filteredMaterials"
+            :key="material._id"
+            class="material-card rounded-xl"
+            elevation="0"
+            variant="outlined"
+          >
+            <div class="material-card-content">
+              <div class="material-icon" :style="{ backgroundColor: getFileTypeColor(material.fileType) + '10' }">
+                <v-icon :color="getFileTypeColor(material.fileType)" size="32">
+                  {{ getFileTypeIcon(material.fileType) }}
+                </v-icon>
+              </div>
               
-              <v-list-item-subtitle>
-                <div class="text-caption">
-                  Uploaded by {{ material.uploadedBy?.firstName }} {{ material.uploadedBy?.lastName }}
-                  • {{ formatDate(material.createdAt) }}
-                  • {{ formatFileSize(material.fileSize) }}
-                  • {{ material.views || 0 }} views • {{ material.downloads || 0 }} downloads
+              <div class="material-info">
+                <h3 class="text-subtitle-1 font-weight-medium mb-1">{{ material.title }}</h3>
+                <div class="text-caption text-medium-emphasis mb-2">
+                  {{ material.uploadedBy?.firstName }} {{ material.uploadedBy?.lastName }} • 
+                  {{ formatDate(material.createdAt) }} • 
+                  {{ formatFileSize(material.fileSize) }}
                 </div>
-                <div class="text-body-2 mt-1" v-if="material.description">
+                <p v-if="material.description" class="text-body-2 text-medium-emphasis mb-2">
                   {{ material.description }}
-                </div>
-                <div class="mt-1" v-if="material.tags && material.tags.length">
-                  <v-chip
-                    v-for="tag in material.tags.slice(0, 3)"
-                    :key="tag"
-                    size="x-small"
-                    variant="outlined"
-                    class="mr-1"
-                  >
+                </p>
+                <div class="d-flex flex-wrap gap-1 mb-2" v-if="material.tags && material.tags.length">
+                  <v-chip v-for="tag in material.tags.slice(0, 3)" :key="tag" size="x-small" variant="outlined">
                     {{ tag }}
                   </v-chip>
-                  <v-chip
-                    v-if="material.tags.length > 3"
-                    size="x-small"
-                    variant="outlined"
-                  >
-                    +{{ material.tags.length - 3 }}
-                  </v-chip>
                 </div>
-              </v-list-item-subtitle>
-
-              <template v-slot:append>
-                <div class="d-flex align-center">
-                  <v-btn
-                    variant="text"
-                    color="purple"
-                    prepend-icon="mdi-robot"
-                    class="mr-1"
-                    @click.stop="openAIMenu(material)"
-                  >
-                    AI
-                  </v-btn>
-                  <v-btn
-                    variant="text"
-                    color="primary"
-                    :href="material.webViewLink"
-                    target="_blank"
-                    prepend-icon="mdi-eye"
-                    class="mr-1"
-                    @click="trackView(material)"
-                  >
-                    View
-                  </v-btn>
-                  <v-btn
-                    variant="text"
-                    color="primary"
-                    :href="material.webContentLink"
-                    target="_blank"
-                    prepend-icon="mdi-download"
-                    @click="trackDownload(material)"
-                  >
-                    Download
-                  </v-btn>
+                <div class="d-flex gap-3 text-caption text-medium-emphasis">
+                  <span><v-icon size="14" class="mr-1">mdi-eye</v-icon>{{ material.views || 0 }} views</span>
+                  <span><v-icon size="14" class="mr-1">mdi-download</v-icon>{{ material.downloads || 0 }} downloads</span>
                 </div>
-              </template>
-            </v-list-item>
-          </v-list>
+              </div>
+              
+              <div class="material-actions">
+                <v-btn
+                  variant="text"
+                  color="purple"
+                  size="small"
+                  @click="openAIMenu(material)"
+                >
+                  <v-icon>mdi-robot-outline</v-icon>
+                </v-btn>
+                <v-btn
+                  variant="text"
+                  color="primary"
+                  size="small"
+                  :href="material.webViewLink"
+                  target="_blank"
+                  @click="trackView(material)"
+                >
+                  <v-icon>mdi-eye</v-icon>
+                </v-btn>
+                <v-btn
+                  variant="text"
+                  color="primary"
+                  size="small"
+                  :href="material.webContentLink"
+                  target="_blank"
+                  @click="trackDownload(material)"
+                >
+                  <v-icon>mdi-download</v-icon>
+                </v-btn>
+              </div>
+            </div>
+          </v-card>
+        </div>
 
-          <v-card-text v-else class="text-center pa-8">
-            <v-icon size="64" color="grey" class="mb-4">mdi-folder-open</v-icon>
-            <h3 class="text-h6 mb-2">No materials found</h3>
-            <p class="text-body-2 text-medium-emphasis">
-              {{ search || filterType ? 'Try adjusting your filters' : 'No learning materials have been uploaded for this course yet' }}
-            </p>
-            <v-btn
-              v-if="search || filterType"
-              color="primary"
-              variant="text"
-              @click="clearFilters"
-            >
-              Clear Filters
-            </v-btn>
-          </v-card-text>
+        <!-- Empty State -->
+        <v-card v-else class="rounded-xl text-center pa-8" variant="tonal">
+          <v-icon size="56" color="grey-lighten-1" class="mb-4">mdi-folder-open-outline</v-icon>
+          <h3 class="text-h6 font-weight-light mb-2">No materials found</h3>
+          <p class="text-body-2 text-medium-emphasis">
+            {{ search || filterType ? 'Try adjusting your filters' : 'No learning materials have been uploaded for this course yet' }}
+          </p>
+          <v-btn
+            v-if="search || filterType"
+            color="primary"
+            variant="text"
+            @click="clearFilters"
+          >
+            Clear Filters
+          </v-btn>
         </v-card>
       </v-col>
     </v-row>
 
-    <!-- AI Menu Popover -->
-    <v-dialog v-model="showAIMenu" max-width="280px" persistent width="auto">
-      <v-card class="ai-menu-card">
-        <v-card-title class="text-subtitle-1 font-weight-medium pa-3 bg-purple-lighten-5">
-          <v-icon color="purple" class="mr-2">mdi-robot</v-icon>
+    <!-- AI Dialogs (same as before) -->
+    <v-dialog v-model="showAIMenu" max-width="320px" persistent>
+      <v-card class="ai-menu-card rounded-xl">
+        <v-card-title class="text-subtitle-1 font-weight-medium pa-4">
+          <v-icon color="purple" class="mr-2">mdi-robot-outline</v-icon>
           AI Assistant
           <v-spacer></v-spacer>
           <v-btn icon="mdi-close" size="small" variant="text" @click="showAIMenu = false"></v-btn>
         </v-card-title>
-        <v-card-text class="pa-3">
+        <v-divider></v-divider>
+        <v-card-text class="pa-4">
           <div class="text-caption text-medium-emphasis mb-3">
-            Material: "{{ selectedMaterial?.title }}"
+            "{{ selectedMaterial?.title }}"
           </div>
           <v-btn
             color="primary"
             variant="tonal"
             block
             class="mb-2"
-            prepend-icon="mdi-text-box"
+            prepend-icon="mdi-text-box-outline"
             @click="openSummaryPanel"
           >
             AI Summary
@@ -227,7 +225,7 @@
             color="success"
             variant="tonal"
             block
-            prepend-icon="mdi-school"
+            prepend-icon="mdi-school-outline"
             @click="openReviewerPanel"
           >
             AI Reviewer
@@ -236,7 +234,6 @@
       </v-card>
     </v-dialog>
 
-    <!-- AI Summary Panel Dialog -->
     <v-dialog v-model="showSummaryPanel" max-width="650px" persistent>
       <AISummaryPanel
         :material-id="selectedMaterial?._id"
@@ -245,7 +242,6 @@
       />
     </v-dialog>
 
-    <!-- AI Reviewer Panel Dialog -->
     <v-dialog v-model="showReviewerPanel" max-width="850px" persistent>
       <AIReviewerPanel
         :material-id="selectedMaterial?._id"
@@ -254,14 +250,15 @@
       />
     </v-dialog>
 
-    <!-- Loading State -->
-    <v-overlay v-model="loading" class="align-center justify-center">
-      <v-progress-circular indeterminate size="64" color="primary"></v-progress-circular>
+    <!-- Loading Overlay -->
+    <v-overlay v-model="loading" class="align-center justify-center" scrim="primary" opacity="0.1">
+      <v-progress-circular indeterminate size="48" color="primary"></v-progress-circular>
     </v-overlay>
   </v-container>
 </template>
 
 <script setup>
+// Script remains the same as your original
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useStudentStore } from '@/stores/studentStore'
@@ -279,12 +276,10 @@ const course = ref(null)
 const materials = ref([])
 const loading = ref(false)
 
-// Search/filter/sort
 const search = ref('')
 const filterType = ref(null)
 const sortBy = ref('newest')
 
-// AI state
 const selectedMaterial = ref(null)
 const showAIMenu = ref(false)
 const showSummaryPanel = ref(false)
@@ -379,22 +374,21 @@ const getFileTypeIcon = (fileType) => {
 
 const getFileTypeColor = (fileType) => {
   const colors = {
-    pdf: 'error',
-    ppt: 'warning',
-    pptx: 'warning',
-    doc: 'info',
-    docx: 'info',
-    video: 'success',
-    image: 'secondary',
-    link: 'primary',
-    other: 'grey'
+    pdf: '#ef4444',
+    ppt: '#f59e0b',
+    pptx: '#f59e0b',
+    doc: '#3b82f6',
+    docx: '#3b82f6',
+    video: '#10b981',
+    image: '#8b5cf6',
+    link: '#6366f1',
+    other: '#64748b'
   }
-  return colors[fileType] || 'primary'
+  return colors[fileType] || '#6366f1'
 }
 
 const trackView = async (material) => {
   await materialStore.trackView(material._id)
-  // Open the link after tracking
   window.open(material.webViewLink, '_blank')
 }
 
@@ -427,10 +421,7 @@ const openReviewerPanel = () => {
 const loadCourseAndMaterials = async () => {
   loading.value = true
   try {
-    // Fetch course details
     course.value = await studentStore.fetchCourseDetails(courseId)
-    
-    // Fetch materials for this course
     materials.value = await materialStore.fetchCourseMaterials(courseId)
   } catch (error) {
     console.error('Failed to load course materials:', error)
@@ -445,36 +436,138 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.material-item {
-  transition: background-color 0.2s;
+.course-materials-container {
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-.material-item:hover {
-  background-color: rgba(0, 0, 0, 0.04);
+/* Course Header */
+.course-header {
+  margin-bottom: 8px;
 }
 
-.ai-menu-card {
-  border-radius: 16px;
-  overflow: hidden;
+.back-btn {
+  margin-left: -8px;
 }
 
-:deep(.v-list-item__append) {
+.course-title-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.course-title {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
+}
+
+.title-accent {
+  width: 60px;
+  height: 3px;
+  background: rgb(var(--v-theme-primary));
+  border-radius: 3px;
+}
+
+.material-count-chip {
+  border-radius: 30px !important;
+}
+
+/* Info Card */
+.info-card {
+  background: rgba(99, 102, 241, 0.04);
+  border: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+/* Search Field */
+.search-field :deep(.v-field) {
+  border-radius: 40px !important;
+}
+
+/* Materials Grid */
+.materials-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.material-card {
+  transition: all 0.2s ease;
+  border: 1px solid #e2e8f0;
+}
+
+.material-card:hover {
+  transform: translateX(4px);
+  border-color: rgba(var(--v-theme-primary), 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.material-card-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+}
+
+.material-icon {
   flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
 }
 
-/* Responsive adjustments */
+.material-info {
+  flex: 1;
+}
+
+.material-actions {
+  flex-shrink: 0;
+  display: flex;
+  gap: 4px;
+}
+
+/* AI Menu Card */
+.ai-menu-card {
+  border-radius: 20px;
+}
+
+/* Gap utility */
+.gap-1 {
+  gap: 4px;
+}
+
+.gap-2 {
+  gap: 8px;
+}
+
+.gap-3 {
+  gap: 12px;
+}
+
+/* Responsive */
 @media (max-width: 600px) {
-  :deep(.v-list-item__prepend) {
-    min-width: 56px;
+  .course-title-section {
+    flex-direction: column;
   }
   
-  :deep(.v-btn) {
-    min-width: 40px;
-    padding: 0 8px;
+  .material-card-content {
+    flex-direction: column;
   }
   
-  :deep(.v-btn .v-btn__prepend) {
-    margin-right: 4px;
+  .material-icon {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .material-actions {
+    align-self: flex-end;
   }
 }
 </style>

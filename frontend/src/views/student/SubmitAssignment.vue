@@ -1,21 +1,34 @@
 <!-- frontend/src/views/student/SubmitAssignment.vue -->
 <template>
-  <v-container fluid>
+  <v-container fluid class="submit-container">
     <v-row class="mb-6">
       <v-col cols="12">
-        <div>
-          <v-btn
-            variant="text"
-            :to="{ name: 'MyAssignments' }"
-            class="mb-2"
-            prepend-icon="mdi-arrow-left"
+        <v-btn
+          variant="text"
+          :to="{ name: 'MyAssignments' }"
+          class="back-btn mb-3"
+          prepend-icon="mdi-arrow-left"
+          size="small"
+        >
+          Back to Assignments
+        </v-btn>
+        <div class="assignment-header">
+          <div>
+            <h1 class="text-h4 font-weight-light mb-1">{{ assignment?.title }}</h1>
+            <div class="header-accent"></div>
+            <p class="text-subtitle-1 text-medium-emphasis mt-2">
+              {{ assignment?.courseId?.courseCode }} • {{ assignment?.courseId?.courseName }}
+            </p>
+          </div>
+          <v-chip 
+            :color="isOverdue ? 'error' : 'success'" 
+            variant="light" 
+            size="large"
+            class="status-chip"
           >
-            Back to Assignments
-          </v-btn>
-          <h1 class="text-h4 font-weight-bold mb-1">{{ assignment?.title }}</h1>
-          <p class="text-subtitle-1 text-medium-emphasis">
-            {{ assignment?.courseId?.courseCode }} - {{ assignment?.courseId?.courseName }}
-          </p>
+            <v-icon start :icon="isOverdue ? 'mdi-alert' : 'mdi-check-circle'"></v-icon>
+            {{ isOverdue ? 'Overdue' : 'Active' }}
+          </v-chip>
         </div>
       </v-col>
     </v-row>
@@ -23,153 +36,145 @@
     <v-row>
       <!-- Assignment Details -->
       <v-col cols="12" lg="5">
-        <v-card class="rounded-lg mb-4" elevation="2">
-          <v-card-title class="text-h6 font-weight-bold">Assignment Details</v-card-title>
+        <v-card class="details-card rounded-xl" elevation="0" variant="outlined">
+          <v-card-title class="text-h6 font-weight-light pa-4">
+            Assignment Details
+            <div class="card-accent"></div>
+          </v-card-title>
           <v-divider></v-divider>
-          <v-card-text>
-            <div class="mb-4">
-              <div class="text-subtitle-2 font-weight-medium mb-1">Description</div>
-              <div class="text-body-2">{{ assignment?.description }}</div>
+          
+          <v-card-text class="pa-4">
+            <!-- Description -->
+            <div class="detail-section mb-4">
+              <div class="detail-label">Description</div>
+              <div class="detail-content">{{ assignment?.description || 'No description provided.' }}</div>
             </div>
 
-            <div class="mb-4">
-              <div class="text-subtitle-2 font-weight-medium mb-1">Instructions</div>
-              <div class="text-body-2">{{ assignment?.instructions || 'No specific instructions provided.' }}</div>
+            <!-- Instructions -->
+            <div class="detail-section mb-4">
+              <div class="detail-label">Instructions</div>
+              <div class="detail-content instruction-text">
+                {{ assignment?.instructions || 'No specific instructions provided.' }}
+              </div>
             </div>
 
-            <!-- Teacher's Attachments -->
-            <div class="mb-4" v-if="assignment?.attachments && assignment.attachments.length > 0">
-              <div class="text-subtitle-2 font-weight-medium mb-2">Assignment Attachments</div>
-              <v-list density="compact" class="bg-grey-lighten-1 rounded">
-                <v-list-item
+            <!-- Attachments -->
+            <div class="detail-section mb-4" v-if="assignment?.attachments?.length">
+              <div class="detail-label">Resources</div>
+              <div class="attachments-list">
+                <a
                   v-for="(attachment, index) in assignment.attachments"
                   :key="index"
                   :href="attachment.webViewLink"
                   target="_blank"
-                  class="attachment-item"
+                  class="attachment-link"
                 >
-                  <template v-slot:prepend>
-                    <v-icon :color="getFileTypeColor(attachment.fileType)" size="24">
-                      {{ getFileIcon(attachment.fileType) }}
-                    </v-icon>
-                  </template>
-                  <v-list-item-title class="text-caption">
-                    {{ attachment.originalFileName || attachment.fileName }}
-                  </v-list-item-title>
-                  <template v-slot:append>
-                    <v-btn
-                      :href="attachment.webContentLink"
-                      target="_blank"
-                      variant="text"
-                      size="small"
-                      icon="mdi-download"
-                    ></v-btn>
-                  </template>
-                </v-list-item>
-              </v-list>
+                  <v-icon size="16" :color="getFileTypeColor(attachment.fileType)" class="mr-2">
+                    {{ getFileIcon(attachment.fileType) }}
+                  </v-icon>
+                  <span class="text-caption">{{ attachment.originalFileName || attachment.fileName }}</span>
+                  <v-icon size="14" class="ml-auto">mdi-open-in-new</v-icon>
+                </a>
+              </div>
             </div>
 
             <v-divider class="my-3"></v-divider>
 
-            <div class="mb-2">
-              <div class="text-subtitle-2 font-weight-medium">Max Score</div>
-              <div class="text-body-2">{{ assignment?.maxScore }} points</div>
-            </div>
-
-            <div class="mb-2">
-              <div class="text-subtitle-2 font-weight-medium">Due Date</div>
-              <div class="text-body-2" :class="{ 'text-error': isOverdue }">
-                {{ formatDate(assignment?.dueDate) }}
-                <v-chip v-if="isOverdue" size="x-small" color="error" class="ml-2">Overdue</v-chip>
+            <!-- Assignment Metadata -->
+            <div class="metadata-grid">
+              <div class="metadata-item">
+                <div class="metadata-label">Max Score</div>
+                <div class="metadata-value">{{ assignment?.maxScore || 0 }} points</div>
               </div>
-            </div>
-
-            <div class="mb-2">
-              <div class="text-subtitle-2 font-weight-medium">Available Period</div>
-              <div class="text-body-2">
-                {{ formatDate(assignment?.availableFrom) }} - {{ formatDate(assignment?.availableUntil) }}
+              <div class="metadata-item">
+                <div class="metadata-label">Due Date</div>
+                <div class="metadata-value" :class="{ 'text-error': isOverdue }">
+                  {{ formatDate(assignment?.dueDate) }}
+                </div>
               </div>
-            </div>
-
-            <div class="mb-2">
-              <div class="text-subtitle-2 font-weight-medium">Allowed File Types</div>
-              <div class="d-flex flex-wrap gap-1 mt-1">
-                <v-chip v-for="type in assignment?.allowedFileTypes" :key="type" size="x-small">
-                  .{{ type }}
-                </v-chip>
+              <div class="metadata-item">
+                <div class="metadata-label">Available Period</div>
+                <div class="metadata-value">
+                  {{ formatDate(assignment?.availableFrom) }} — {{ formatDate(assignment?.availableUntil) }}
+                </div>
               </div>
-            </div>
-
-            <div class="mb-2">
-              <div class="text-subtitle-2 font-weight-medium">Max File Size</div>
-              <div class="text-body-2">{{ formatFileSize(assignment?.maxFileSize) }}</div>
+              <div class="metadata-item">
+                <div class="metadata-label">File Types</div>
+                <div class="d-flex flex-wrap gap-1 mt-1">
+                  <v-chip v-for="type in assignment?.allowedFileTypes" :key="type" size="x-small" variant="outlined">
+                    .{{ type }}
+                  </v-chip>
+                </div>
+              </div>
+              <div class="metadata-item">
+                <div class="metadata-label">Max File Size</div>
+                <div class="metadata-value">{{ formatFileSize(assignment?.maxFileSize) }}</div>
+              </div>
             </div>
           </v-card-text>
         </v-card>
 
         <!-- Existing Submission -->
-        <v-card v-if="existingSubmission" class="rounded-lg" elevation="2">
-          <v-card-title class="text-h6 font-weight-bold">Your Submission</v-card-title>
+        <v-card v-if="existingSubmission" class="submission-card rounded-xl mt-4" elevation="0" variant="outlined">
+          <v-card-title class="text-h6 font-weight-light pa-4">
+            Your Submission
+            <div class="card-accent"></div>
+          </v-card-title>
           <v-divider></v-divider>
-          <v-card-text>
-            <div class="mb-2">
-              <div class="text-subtitle-2 font-weight-medium">Status</div>
-              <v-chip :color="getSubmissionStatusColor(existingSubmission.status)" size="small">
+          
+          <v-card-text class="pa-4">
+            <div class="submission-status mb-3">
+              <div class="detail-label">Status</div>
+              <v-chip :color="getSubmissionStatusColor(existingSubmission.status)" size="small" variant="light">
                 {{ existingSubmission.status?.toUpperCase() || 'SUBMITTED' }}
               </v-chip>
             </div>
 
-            <div class="mb-2">
-              <div class="text-subtitle-2 font-weight-medium">Submitted On</div>
-              <div class="text-body-2">{{ formatDate(existingSubmission.submissionDate) }}</div>
+            <div class="submission-date mb-3">
+              <div class="detail-label">Submitted On</div>
+              <div class="detail-content">{{ formatDate(existingSubmission.submissionDate) }}</div>
             </div>
 
-            <div class="mb-2" v-if="existingSubmission.submittedFiles?.length">
-              <div class="text-subtitle-2 font-weight-medium">Submitted Files</div>
-              <v-list density="compact" class="bg-grey-lighten-1 rounded mt-1">
-                <v-list-item
+            <div class="submission-files mb-3" v-if="existingSubmission.submittedFiles?.length">
+              <div class="detail-label mb-2">Submitted Files</div>
+              <div class="files-list">
+                <a
                   v-for="(file, idx) in existingSubmission.submittedFiles"
                   :key="idx"
                   :href="file.webViewLink"
                   target="_blank"
+                  class="file-link"
                 >
-                  <template v-slot:prepend>
-                    <v-icon size="20">mdi-file</v-icon>
-                  </template>
-                  <v-list-item-title class="text-caption">
-                    {{ file.originalFileName || file.fileName }}
-                  </v-list-item-title>
-                  <template v-slot:append>
-                    <v-chip size="x-small" color="info">
-                      {{ formatFileSize(file.fileSize) }}
-                    </v-chip>
-                  </template>
-                </v-list-item>
-              </v-list>
-            </div>
-
-            <div v-if="existingSubmission.comments" class="mb-2">
-              <div class="text-subtitle-2 font-weight-medium">Your Comments</div>
-              <div class="text-body-2 pa-2 bg-grey-lighten-5 rounded-lg">
-                {{ existingSubmission.comments }}
+                  <v-icon size="16" class="mr-2">mdi-file-outline</v-icon>
+                  <span class="text-caption">{{ file.originalFileName || file.fileName }}</span>
+                  <v-chip size="x-small" variant="light" class="ml-auto">
+                    {{ formatFileSize(file.fileSize) }}
+                  </v-chip>
+                </a>
               </div>
             </div>
 
-            <!-- Show Grade if available -->
-            <div v-if="existingSubmission.grade" class="mt-3">
-              <v-divider class="mb-2"></v-divider>
-              <div class="text-subtitle-2 font-weight-medium">Grade Received</div>
-              <div class="d-flex align-center mt-1">
-                <v-chip :color="getGradeColor(existingSubmission.grade.score)" size="large">
-                  {{ existingSubmission.grade.score }}/{{ assignment?.maxScore }}
-                  ({{ getPercentage(existingSubmission.grade.score, assignment?.maxScore) }}%)
+            <div class="submission-comments mb-3" v-if="existingSubmission.comments">
+              <div class="detail-label">Your Comments</div>
+              <div class="comments-box">{{ existingSubmission.comments }}</div>
+            </div>
+
+            <!-- Grade Display -->
+            <div v-if="existingSubmission.grade" class="grade-section mt-3">
+              <v-divider class="mb-3"></v-divider>
+              <div class="detail-label">Grade Received</div>
+              <div class="grade-display mt-2">
+                <div class="grade-score-large">
+                  <span class="grade-score-value">{{ existingSubmission.grade.score }}</span>
+                  <span class="grade-score-max">/{{ assignment?.maxScore }}</span>
+                </div>
+                <v-chip :color="getGradeColor(existingSubmission.grade.score)" size="large" variant="light">
+                  {{ getPercentage(existingSubmission.grade.score, assignment?.maxScore) }}%
                 </v-chip>
               </div>
-              <div v-if="existingSubmission.grade.feedback" class="mt-2">
-                <div class="text-subtitle-2 font-weight-medium">Feedback</div>
-                <div class="text-body-2 pa-2 bg-grey-lighten-5 rounded-lg">
-                  {{ existingSubmission.grade.feedback }}
-                </div>
+              <div v-if="existingSubmission.grade.feedback" class="feedback-box mt-3">
+                <div class="detail-label mb-1">Teacher's Feedback</div>
+                <div class="feedback-content">{{ existingSubmission.grade.feedback }}</div>
               </div>
             </div>
           </v-card-text>
@@ -178,43 +183,50 @@
 
       <!-- Submission Form -->
       <v-col cols="12" lg="7">
-        <v-card class="rounded-lg" elevation="2">
-          <v-card-title class="text-h6 font-weight-bold">
-            {{ existingSubmission && existingSubmission.grade ? 'Assignment Already Graded' : (existingSubmission ? 'Update Submission' : 'Submit Assignment') }}
+        <v-card class="form-card rounded-xl" elevation="0" variant="outlined">
+          <v-card-title class="text-h6 font-weight-light pa-4">
+            {{ submissionTitle }}
+            <div class="card-accent"></div>
           </v-card-title>
           <v-divider></v-divider>
-          <v-card-text>
+          
+          <v-card-text class="pa-4">
             <v-alert
-              v-if="existingSubmission && existingSubmission.grade"
+              v-if="existingSubmission?.grade"
               type="success"
               variant="tonal"
-              class="mb-4"
+              class="mb-4 rounded-lg"
+              icon="mdi-check-circle"
             >
-              This assignment has been graded. You cannot make changes to your submission.
+              This assignment has been graded. Your submission is final.
             </v-alert>
 
             <v-alert
               v-else-if="!canSubmit"
               type="warning"
               variant="tonal"
-              class="mb-4"
+              class="mb-4 rounded-lg"
+              icon="mdi-alert"
             >
-              This assignment is not available for submission. The submission period is
-              {{ formatDate(assignment?.availableFrom) }} to {{ formatDate(assignment?.availableUntil) }}.
+              This assignment is not currently available for submission.
+              <div class="text-caption mt-1">
+                Available from {{ formatDate(assignment?.availableFrom) }} to {{ formatDate(assignment?.availableUntil) }}
+              </div>
             </v-alert>
 
             <v-form ref="form" v-model="valid" v-else>
               <v-file-input
                 v-model="files"
-                :label="existingSubmission ? 'Add More Files' : 'Upload Files'"
+                :label="existingSubmission ? 'Add Additional Files' : 'Upload Files'"
                 multiple
                 :accept="getAcceptString"
                 :rules="fileRules"
-                prepend-icon="mdi-paperclip"
+                prepend-icon="mdi-cloud-upload"
                 variant="outlined"
                 show-size
                 counter
-                :disabled="!canSubmit || (existingSubmission && existingSubmission.grade)"
+                class="file-input"
+                :disabled="!canSubmit"
               >
                 <template v-slot:selection="{ fileNames }">
                   <template v-for="fileName in fileNames" :key="fileName">
@@ -228,17 +240,18 @@
               <v-textarea
                 v-model="comments"
                 label="Comments (Optional)"
-                placeholder="Add any comments for the teacher..."
+                placeholder="Add any comments or notes for your instructor..."
                 variant="outlined"
                 rows="4"
-                :disabled="!canSubmit || (existingSubmission && existingSubmission.grade)"
+                :disabled="!canSubmit"
+                class="mt-4"
               ></v-textarea>
 
-              <div class="d-flex justify-space-between mt-4">
+              <div class="d-flex gap-3 mt-4">
                 <v-btn
-                  color="grey"
-                  variant="text"
+                  variant="outlined"
                   :to="{ name: 'MyAssignments' }"
+                  class="flex-grow-1"
                 >
                   Cancel
                 </v-btn>
@@ -246,9 +259,11 @@
                   color="primary"
                   variant="flat"
                   :loading="submitting"
-                  :disabled="!valid || !canSubmit || (existingSubmission && existingSubmission.grade)"
-                  @click="submitAssignment"
+                  :disabled="!valid || !canSubmit"
+                  class="flex-grow-1"
+                  height="48"
                 >
+                  <v-icon start :icon="existingSubmission ? 'mdi-update' : 'mdi-send'"></v-icon>
                   {{ existingSubmission ? 'Update Submission' : 'Submit Assignment' }}
                 </v-btn>
               </div>
@@ -279,6 +294,12 @@ const valid = ref(false)
 const submitting = ref(false)
 const form = ref(null)
 
+const submissionTitle = computed(() => {
+  if (existingSubmission.value?.grade) return 'Assignment Completed'
+  if (existingSubmission.value) return 'Update Submission'
+  return 'Submit Assignment'
+})
+
 const isOverdue = computed(() => {
   if (!assignment.value?.dueDate) return false
   return new Date(assignment.value.dueDate) < new Date()
@@ -286,6 +307,7 @@ const isOverdue = computed(() => {
 
 const canSubmit = computed(() => {
   if (!assignment.value) return false
+  if (existingSubmission.value?.grade) return false
   const now = new Date()
   const availableFrom = new Date(assignment.value.availableFrom || assignment.value.createdAt)
   const availableUntil = new Date(assignment.value.availableUntil || assignment.value.dueDate)
@@ -340,35 +362,19 @@ const getFileIcon = (fileType) => {
     docx: 'mdi-file-word-box',
     ppt: 'mdi-file-powerpoint-box',
     pptx: 'mdi-file-powerpoint-box',
-    xls: 'mdi-file-excel-box',
-    xlsx: 'mdi-file-excel-box',
-    zip: 'mdi-folder-zip',
-    rar: 'mdi-folder-zip',
-    jpg: 'mdi-file-image',
-    png: 'mdi-file-image',
-    mp4: 'mdi-video-box',
-    mp3: 'mdi-music-box',
-    txt: 'mdi-file-document',
-    py: 'mdi-language-python',
-    js: 'mdi-language-javascript',
-    java: 'mdi-language-java',
-    default: 'mdi-file'
+    default: 'mdi-file-outline'
   }
   return icons[fileType?.toLowerCase()] || icons.default
 }
 
 const getFileTypeColor = (fileType) => {
   const colors = {
-    pdf: 'error',
-    doc: 'primary',
-    docx: 'primary',
-    ppt: 'warning',
-    pptx: 'warning',
-    zip: 'grey',
-    jpg: 'success',
-    png: 'success',
-    mp4: 'info',
-    default: 'primary'
+    pdf: '#ef4444',
+    doc: '#3b82f6',
+    docx: '#3b82f6',
+    ppt: '#f59e0b',
+    pptx: '#f59e0b',
+    default: '#64748b'
   }
   return colors[fileType?.toLowerCase()] || colors.default
 }
@@ -377,8 +383,7 @@ const getSubmissionStatusColor = (status) => {
   const colors = {
     submitted: 'info',
     late: 'warning',
-    graded: 'success',
-    returned: 'primary'
+    graded: 'success'
   }
   return colors[status?.toLowerCase()] || 'grey'
 }
@@ -398,10 +403,7 @@ const getPercentage = (score, maxScore) => {
 
 const loadAssignment = async () => {
   try {
-    // Get assignment details
     assignment.value = await assignmentStore.getAssignment(assignmentId)
-    
-    // Get existing submission if any
     const submission = await assignmentStore.getMySubmission(assignmentId)
     existingSubmission.value = submission
     
@@ -414,7 +416,7 @@ const loadAssignment = async () => {
 }
 
 const submitAssignment = async () => {
-  if (!form.value.validate()) return
+  if (!form.value?.validate()) return
   
   submitting.value = true
   try {
@@ -439,15 +441,195 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.submit-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Header */
+.back-btn {
+  margin-left: -8px;
+}
+
+.assignment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.header-accent {
+  width: 60px;
+  height: 3px;
+  background: rgb(var(--v-theme-primary));
+  border-radius: 3px;
+  margin-top: 8px;
+}
+
+.status-chip {
+  border-radius: 30px !important;
+}
+
+/* Cards */
+.details-card, .submission-card, .form-card {
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.card-accent {
+  width: 40px;
+  height: 2px;
+  background: rgb(var(--v-theme-primary));
+  border-radius: 2px;
+  margin-top: 8px;
+}
+
+/* Detail Sections */
+.detail-section {
+  width: 100%;
+}
+
+.detail-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.detail-content {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #1e293b;
+}
+
+.instruction-text {
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 12px;
+}
+
+/* Attachments */
+.attachments-list, .files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.attachment-link, .file-link {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-radius: 10px;
+  text-decoration: none;
+  color: #1e293b;
+  transition: all 0.2s ease;
+}
+
+.attachment-link:hover, .file-link:hover {
+  background: #f1f5f9;
+  transform: translateX(4px);
+}
+
+/* Metadata Grid */
+.metadata-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.metadata-item {
+  padding: 8px;
+  background: #f8fafc;
+  border-radius: 10px;
+}
+
+.metadata-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.metadata-value {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Comments Box */
+.comments-box {
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+/* Grade Display */
+.grade-display {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.grade-score-large {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.grade-score-value {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.grade-score-max {
+  font-size: 1rem;
+  color: #64748b;
+}
+
+.feedback-box {
+  padding: 12px;
+  background: #eff6ff;
+  border-radius: 12px;
+}
+
+.feedback-content {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #1e40af;
+}
+
+/* File Input */
+.file-input :deep(.v-field) {
+  border-radius: 12px !important;
+}
+
+/* Gap Utility */
 .gap-1 {
   gap: 4px;
 }
 
-.attachment-item {
-  transition: background-color 0.2s;
+.gap-3 {
+  gap: 12px;
 }
 
-.attachment-item:hover {
-  background-color: rgba(0, 0, 0, 0.04);
+/* Responsive */
+@media (max-width: 600px) {
+  .assignment-header {
+    flex-direction: column;
+  }
+  
+  .metadata-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .grade-score-value {
+    font-size: 1.5rem;
+  }
 }
 </style>

@@ -1,4 +1,4 @@
-Directory Tree — Generated on 4/25/2026, 11:31:27
+Directory Tree — Generated on 5/16/2026, 11:21:28
 Root: lms
 
 lms/
@@ -31,6 +31,7 @@ lms/
 │  │  ├─ studentRoutes.js
 │  │  └─ teacherRoutes.js
 │  ├─ scripts/
+│  │  ├─ fixMaterialSchema.js
 │  │  ├─ getGoogleRefreshToken.js
 │  │  ├─ initDatabase.js
 │  │  └─ resetDatabase.js
@@ -74,6 +75,7 @@ lms/
       ├─ plugins/
       │  ├─ axios.js
       │  ├─ index.js
+      │  ├─ modalFix.js
       │  └─ vuetify.js
       ├─ router/
       │  └─ index.js

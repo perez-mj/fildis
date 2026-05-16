@@ -29,6 +29,11 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
     (config) => {
+        // CRITICAL: Don't add token for refresh endpoint
+        if (config.url === '/auth/refresh') {
+            return config
+        }
+        
         const authStore = useAuthStore()
         const token = authStore.accessToken
         
@@ -41,18 +46,18 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 )
 
-// Response interceptor with token refresh logic
+// Response interceptor
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config
         
-        // Prevent infinite loops - don't retry refresh endpoint
+        // CRITICAL: Don't retry refresh endpoint
         if (originalRequest.url === '/auth/refresh') {
             return Promise.reject(error)
         }
         
-        // Check if error is due to token expiration (401 with TOKEN_EXPIRED code)
+        // Check if error is due to token expiration
         const isTokenExpired = error.response?.status === 401 && 
                               (error.response?.data?.code === 'TOKEN_EXPIRED' ||
                                error.response?.data?.message?.toLowerCase().includes('expired'))

@@ -97,7 +97,7 @@
 
         <v-divider></v-divider>
 
-        <v-list-item @click="logout">
+        <v-list-item @click="handleLogout">
           <template v-slot:prepend>
             <v-icon color="error">mdi-logout</v-icon>
           </template>
@@ -127,6 +127,38 @@
       </v-toolbar>
     </v-card>
   </v-dialog>
+
+  <!-- Logout Confirmation Dialog -->
+  <v-dialog v-model="showLogoutDialog" max-width="400" persistent>
+    <v-card>
+      <v-card-title class="text-h5">
+        <v-icon color="error" start>mdi-logout</v-icon>
+        Confirm Logout
+      </v-card-title>
+      
+      <v-card-text class="pt-4">
+        Are you sure you want to logout?
+      </v-card-text>
+      
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn
+          variant="text"
+          @click="showLogoutDialog = false"
+        >
+          Cancel
+        </v-btn>
+        <v-btn
+          color="error"
+          variant="flat"
+          @click="confirmLogout"
+          :loading="logoutLoading"
+        >
+          Logout
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script setup>
@@ -141,6 +173,8 @@ const router = useRouter()
 const search = ref('')
 const showSearchDialog = ref(false)
 const userMenuOpen = ref(false)
+const showLogoutDialog = ref(false)
+const logoutLoading = ref(false)
 
 const appBarColor = computed(() => {
   const role = authStore.userRole
@@ -189,10 +223,22 @@ const getUserInitials = () => {
   return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase()
 }
 
-const logout = async () => {
+const handleLogout = () => {
   userMenuOpen.value = false
-  await authStore.logout()
-  router.push('/login')
+  showLogoutDialog.value = true
+}
+
+const confirmLogout = async () => {
+  logoutLoading.value = true
+  try {
+    await authStore.logout()
+    router.push('/login')
+  } catch (error) {
+    console.error('Logout failed:', error)
+  } finally {
+    logoutLoading.value = false
+    showLogoutDialog.value = false
+  }
 }
 
 const goToProfile = () => {

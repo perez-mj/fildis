@@ -1,4 +1,5 @@
 // frontend/src/services/authService.js
+import axios from 'axios'  // Import plain axios, NOT your api instance
 import api from '@/plugins/axios'
 
 class AuthService {
@@ -19,38 +20,44 @@ class AuthService {
     }
   }
 
-  // Refresh access token
+  // Refresh access token - USE PLAIN AXIOS, NOT the interceptor
   async refreshToken(refreshToken) {
-    const response = await api.post('/auth/refresh', { refreshToken })
+    // Create a temporary axios instance WITHOUT interceptors
+    const response = await axios.post(
+      `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/refresh`,
+      { refreshToken },
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        timeout: 30000
+      }
+    )
     return response.data
   }
 
-  // Change password
+  // Rest of your methods remain the same...
   async changePassword(data) {
     const response = await api.post('/auth/change-password', data)
     return response.data
   }
 
-  // Get user profile
   async getProfile() {
     const response = await api.get('/auth/profile')
     return response.data
   }
 
-  // Update user profile
   async updateProfile(profileData) {
     const response = await api.put('/auth/profile', profileData)
     return response.data
   }
 
-  // Set auth header
   setAuthHeader(token) {
     if (token) {
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`
     }
   }
 
-  // Remove auth header
   removeAuthHeader() {
     delete api.defaults.headers.common['Authorization']
   }

@@ -99,7 +99,7 @@
               <v-chip 
                 size="x-small" 
                 variant="outlined" 
-                color="info" 
+                color="success" 
                 class="ma-1"
                 @click="fillCredentials('student@lms.com', 'student123')"
               >

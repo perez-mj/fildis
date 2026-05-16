@@ -1,39 +1,44 @@
 <!-- frontend/src/views/teacher/TeacherDashboard.vue -->
 <template>
   <div class="teacher-dashboard">
-    <v-container fluid>
+    <v-container fluid class="pa-4 pa-sm-6">
+      <!-- Header -->
+      <div class="mb-6">
+        <h1 class="text-h4 font-weight-light mb-2">Dashboard</h1>
+        <div class="section-underline"></div>
+      </div>
 
       <!-- Stats Cards -->
       <v-row>
         <v-col cols="12" sm="6" md="3">
-          <v-card :loading="loading" class="text-center pa-4" color="info" variant="tonal" hover>
-            <v-icon size="48" icon="mdi-book-open-variant" color="info"></v-icon>
-            <h3 class="text-h4 mt-2 font-weight-bold">{{ stats?.totalCourses || 0 }}</h3>
-            <p class="text-subtitle-1 mb-0 text-medium-emphasis">Total Courses</p>
+          <v-card variant="outlined" class="stat-card text-center pa-4">
+            <v-icon icon="mdi-book-open-variant" size="28" color="primary" class="mb-2"></v-icon>
+            <div class="text-h4 font-weight-light mt-1">{{ stats?.totalCourses || 0 }}</div>
+            <div class="text-caption text-grey-darken-1">Total Courses</div>
           </v-card>
         </v-col>
 
         <v-col cols="12" sm="6" md="3">
-          <v-card :loading="loading" class="text-center pa-4" color="success" variant="tonal" hover>
-            <v-icon size="48" icon="mdi-account-group" color="success"></v-icon>
-            <h3 class="text-h4 mt-2 font-weight-bold">{{ stats?.totalStudents || 0 }}</h3>
-            <p class="text-subtitle-1 mb-0 text-medium-emphasis">Total Students</p>
+          <v-card variant="outlined" class="stat-card text-center pa-4">
+            <v-icon icon="mdi-account-group" size="28" color="success" class="mb-2"></v-icon>
+            <div class="text-h4 font-weight-light mt-1">{{ stats?.totalStudents || 0 }}</div>
+            <div class="text-caption text-grey-darken-1">Total Students</div>
           </v-card>
         </v-col>
 
         <v-col cols="12" sm="6" md="3">
-          <v-card :loading="loading" class="text-center pa-4" color="warning" variant="tonal" hover>
-            <v-icon size="48" icon="mdi-clock-alert" color="warning"></v-icon>
-            <h3 class="text-h4 mt-2 font-weight-bold">{{ stats?.pendingGrading || 0 }}</h3>
-            <p class="text-subtitle-1 mb-0 text-medium-emphasis">Pending Grading</p>
+          <v-card variant="outlined" class="stat-card text-center pa-4">
+            <v-icon icon="mdi-clock-alert" size="28" color="warning" class="mb-2"></v-icon>
+            <div class="text-h4 font-weight-light mt-1">{{ stats?.pendingGrading || 0 }}</div>
+            <div class="text-caption text-grey-darken-1">Pending Grading</div>
           </v-card>
         </v-col>
 
         <v-col cols="12" sm="6" md="3">
-          <v-card :loading="loading" class="text-center pa-4" color="error" variant="tonal" hover>
-            <v-icon size="48" icon="mdi-calendar-clock" color="error"></v-icon>
-            <h3 class="text-h4 mt-2 font-weight-bold">{{ stats?.upcomingDeadlines || 0 }}</h3>
-            <p class="text-subtitle-1 mb-0 text-medium-emphasis">Upcoming Deadlines</p>
+          <v-card variant="outlined" class="stat-card text-center pa-4">
+            <v-icon icon="mdi-calendar-clock" size="28" color="info" class="mb-2"></v-icon>
+            <div class="text-h4 font-weight-light mt-1">{{ stats?.upcomingDeadlines || 0 }}</div>
+            <div class="text-caption text-grey-darken-1">Upcoming Deadlines</div>
           </v-card>
         </v-col>
       </v-row>
@@ -42,163 +47,161 @@
       <v-row class="mt-2">
         <v-col cols="12">
           <v-card variant="outlined">
-            <v-card-title class="text-h6">Quick Actions</v-card-title>
-            <v-card-text>
-              <v-btn-group divided>
-                <v-btn color="primary" variant="text" @click="quickActions.createAssignment = true">
-                  <v-icon start icon="mdi-plus-circle"></v-icon>
+            <v-card-title class="text-subtitle-1 font-weight-light pa-3 border-bottom">
+              Quick Actions
+            </v-card-title>
+            <v-card-text class="pa-3">
+              <div class="d-flex flex-wrap gap-2">
+                <v-btn color="primary" variant="text" @click="quickActions.createAssignment = true" rounded="pill">
+                  <v-icon start icon="mdi-plus-circle" size="16"></v-icon>
                   Create Assignment
                 </v-btn>
-                <v-btn color="success" variant="text" @click="quickActions.postAnnouncement = true">
-                  <v-icon start icon="mdi-bullhorn"></v-icon>
+                <v-btn color="success" variant="text" @click="quickActions.postAnnouncement = true" rounded="pill">
+                  <v-icon start icon="mdi-bullhorn" size="16"></v-icon>
                   Post Announcement
                 </v-btn>
-                <v-btn color="info" variant="text" to="/teacher/courses">
-                  <v-icon start icon="mdi-book"></v-icon>
+                <v-btn color="info" variant="text" to="/teacher/courses" rounded="pill">
+                  <v-icon start icon="mdi-book" size="16"></v-icon>
                   View Courses
                 </v-btn>
-              </v-btn-group>
+              </div>
             </v-card-text>
           </v-card>
         </v-col>
       </v-row>
 
       <!-- My Courses Section -->
-      <v-row class="mt-4">
-        <v-col cols="12">
-          <div class="d-flex align-center justify-space-between mb-4 flex-wrap">
-            <h2 class="text-h5 font-weight-bold">My Courses</h2>
-            <v-btn color="primary" variant="text" to="/teacher/courses" prepend-icon="mdi-arrow-right">
-              View All Courses
-            </v-btn>
+      <div class="mt-6">
+        <div class="d-flex align-center justify-space-between mb-4">
+          <div>
+            <h2 class="text-h5 font-weight-light mb-2">My Courses</h2>
+            <div class="section-underline-sm"></div>
           </div>
-        </v-col>
-      </v-row>
+          <v-btn color="primary" variant="text" to="/teacher/courses" append-icon="mdi-arrow-right" rounded="pill">
+            View All
+          </v-btn>
+        </div>
 
-      <v-row>
-        <v-col v-for="course in myCourses.slice(0, 3)" :key="course._id" cols="12" md="6" lg="4">
-          <v-card :loading="loading" hover class="course-card" elevation="2">
-            <v-card-item>
-              <template v-slot:prepend>
-                <v-avatar :color="getCourseColor(course.courseCode)" variant="flat" rounded="lg">
-                  <v-icon icon="mdi-book"></v-icon>
-                </v-avatar>
-              </template>
-              <v-card-title class="text-h6">{{ course.courseName }}</v-card-title>
-              <v-card-subtitle>{{ course.courseCode }}</v-card-subtitle>
-            </v-card-item>
-
-            <v-card-text>
-              <div class="d-flex ga-4 mb-3 flex-wrap">
-                <div class="d-flex align-center">
-                  <v-icon size="small" icon="mdi-account-group" class="me-1"></v-icon>
-                  <span class="text-body-2">{{ course.students?.length || 0 }} Students</span>
-                </div>
-                <div class="d-flex align-center">
-                  <v-icon size="small" icon="mdi-file-document" class="me-1"></v-icon>
-                  <span class="text-body-2">{{ course.materials?.length || 0 }} Materials</span>
-                </div>
-                <div class="d-flex align-center">
-                  <v-icon size="small" icon="mdi-format-list-checkbox" class="me-1"></v-icon>
-                  <span class="text-body-2">{{ course.assignments?.length || 0 }} Assignments</span>
-                </div>
-              </div>
-              <p class="text-body-2 text-medium-emphasis">{{ truncateText(course.description, 100) }}</p>
-            </v-card-text>
-
-            <v-card-actions class="pt-0">
-              <v-btn color="primary" variant="text" size="small" :to="`/teacher/courses/${course._id}/materials`">
-                <v-icon start icon="mdi-folder" size="small"></v-icon>
-                Materials
-              </v-btn>
-              <v-btn color="success" variant="text" size="small" :to="`/teacher/assignments?course=${course._id}`">
-                <v-icon start icon="mdi-format-list-checkbox" size="small"></v-icon>
-                Assignments
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-col>
-
-        <v-col v-if="myCourses.length === 0 && !loading" cols="12">
-          <v-alert type="info" variant="tonal" class="text-center">
-            <v-icon icon="mdi-information" size="large" class="mb-2"></v-icon>
-            <h3 class="text-h6">No Courses Assigned</h3>
-            <p class="mb-0">You haven't been assigned to any courses yet. Contact the administrator.</p>
-          </v-alert>
-        </v-col>
-      </v-row>
-
-      <!-- Recent Submissions & Announcements -->
-      <v-row class="mt-4">
-        <v-col cols="12" md="6">
-          <v-card>
-            <v-card-title class="text-h6 d-flex align-center">
-              <v-icon start icon="mdi-clock-alert"></v-icon>
-              Recent Submissions
-            </v-card-title>
-            <v-divider></v-divider>
-            <v-list v-if="stats?.recentSubmissions?.length" lines="two">
-              <v-list-item v-for="submission in stats.recentSubmissions.slice(0, 5)" :key="submission._id">
+        <v-row>
+          <v-col v-for="course in myCourses.slice(0, 3)" :key="course._id" cols="12" md="6" lg="4">
+            <v-card variant="outlined" :loading="loading" class="course-card">
+              <v-card-item class="pa-4">
                 <template v-slot:prepend>
-                  <v-avatar :color="submission.status === 'graded' ? 'success' : 'warning'" size="36">
-                    <v-icon :icon="submission.status === 'graded' ? 'mdi-check' : 'mdi-clock'"></v-icon>
+                  <v-avatar :color="getCourseColor(course.courseCode)" variant="tonal" rounded="lg" size="48">
+                    <v-icon icon="mdi-book" size="24"></v-icon>
                   </v-avatar>
                 </template>
-                <v-list-item-title>{{ submission.assignmentId?.title }}</v-list-item-title>
-                <v-list-item-subtitle>
+                <v-card-title class="text-h6 font-weight-light pa-0 mb-1">{{ course.courseName }}</v-card-title>
+                <v-card-subtitle class="pa-0 text-caption">{{ course.courseCode }}</v-card-subtitle>
+              </v-card-item>
+
+              <v-card-text class="pt-0 px-4 pb-0">
+                <div class="d-flex ga-3 mb-2">
+                  <div class="d-flex align-center">
+                    <v-icon size="12" icon="mdi-account-group" class="me-1" color="grey-darken-1"></v-icon>
+                    <span class="text-caption">{{ course.students?.length || 0 }} Students</span>
+                  </div>
+                  <div class="d-flex align-center">
+                    <v-icon size="12" icon="mdi-file-document" class="me-1" color="grey-darken-1"></v-icon>
+                    <span class="text-caption">{{ course.materials?.length || 0 }} Materials</span>
+                  </div>
+                </div>
+                <p class="text-body-2 text-grey-darken-1">{{ truncateText(course.description, 80) }}</p>
+              </v-card-text>
+
+              <v-card-actions class="pa-3 pt-0">
+                <v-btn color="primary" variant="text" size="small" :to="`/teacher/courses/${course._id}/materials`" rounded="pill">
+                  <v-icon start icon="mdi-folder" size="14"></v-icon>
+                  Materials
+                </v-btn>
+                <v-btn color="success" variant="text" size="small" :to="`/teacher/assignments?course=${course._id}`" rounded="pill">
+                  <v-icon start icon="mdi-format-list-checkbox" size="14"></v-icon>
+                  Tasks
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-col>
+
+          <v-col v-if="myCourses.length === 0 && !loading" cols="12">
+            <v-card variant="outlined" class="text-center pa-8">
+              <v-icon icon="mdi-information" size="48" color="grey-lighten-1" class="mb-3" opacity="0.5"></v-icon>
+              <div class="text-h6 font-weight-light text-grey-darken-1">No Courses Assigned</div>
+              <div class="text-caption text-grey-darken-1 mt-1">You haven't been assigned to any courses yet</div>
+            </v-card>
+          </v-col>
+        </v-row>
+      </div>
+
+      <!-- Recent Submissions & Announcements -->
+      <v-row class="mt-6">
+        <v-col cols="12" md="6">
+          <v-card variant="outlined">
+            <v-card-title class="text-subtitle-1 font-weight-light pa-3 border-bottom">
+              <v-icon start icon="mdi-clock-alert" size="16"></v-icon>
+              Recent Submissions
+            </v-card-title>
+            <v-list v-if="stats?.recentSubmissions?.length" class="calm-list">
+              <v-list-item v-for="submission in stats.recentSubmissions.slice(0, 5)" :key="submission._id" class="calm-list-item">
+                <template v-slot:prepend>
+                  <v-avatar :color="submission.status === 'graded' ? 'success' : 'warning'" size="32" variant="tonal">
+                    <v-icon :icon="submission.status === 'graded' ? 'mdi-check' : 'mdi-clock'" size="16"></v-icon>
+                  </v-avatar>
+                </template>
+                <v-list-item-title class="text-body-2">{{ submission.assignmentId?.title }}</v-list-item-title>
+                <v-list-item-subtitle class="text-caption">
                   {{ submission.studentId?.firstName }} {{ submission.studentId?.lastName }}
                   • {{ formatRelativeTime(submission.submissionDate) }}
-                  <v-chip v-if="submission.isLate" color="error" size="x-small" class="ml-2">Late</v-chip>
+                  <v-chip v-if="submission.isLate" color="error" size="x-small" variant="tonal" class="ml-1">Late</v-chip>
                 </v-list-item-subtitle>
                 <template v-slot:append>
                   <v-btn
                     v-if="submission.status !== 'graded'"
                     color="primary"
-                    size="small"
+                    size="x-small"
                     variant="text"
                     :to="`/teacher/submissions/${submission._id}/grade`"
+                    rounded="pill"
                   >
                     Grade
                   </v-btn>
-                  <v-chip v-else color="success" size="small">
+                  <v-chip v-else color="success" size="x-small" variant="tonal">
                     {{ submission.grade?.score }}/{{ submission.assignmentId?.maxScore }}
                   </v-chip>
                 </template>
               </v-list-item>
             </v-list>
-            <v-card-text v-else class="text-center pa-8">
-              <v-icon icon="mdi-check-circle" size="48" color="success" class="mb-2"></v-icon>
-              <p class="mb-0">No pending submissions!</p>
+            <v-card-text v-else class="text-center pa-6">
+              <v-icon icon="mdi-check-circle" size="32" color="success" class="mb-2" opacity="0.5"></v-icon>
+              <div class="text-caption text-grey-darken-1">No pending submissions!</div>
             </v-card-text>
           </v-card>
         </v-col>
 
         <v-col cols="12" md="6">
-          <v-card>
-            <v-card-title class="text-h6 d-flex align-center">
-              <v-icon start icon="mdi-bullhorn"></v-icon>
+          <v-card variant="outlined">
+            <v-card-title class="text-subtitle-1 font-weight-light pa-3 border-bottom">
+              <v-icon start icon="mdi-bullhorn" size="16"></v-icon>
               Recent Announcements
             </v-card-title>
-            <v-divider></v-divider>
-            <v-list v-if="recentAnnouncements.length" lines="two">
-              <v-list-item v-for="announcement in recentAnnouncements" :key="announcement._id">
+            <v-list v-if="recentAnnouncements.length" class="calm-list">
+              <v-list-item v-for="announcement in recentAnnouncements" :key="announcement._id" class="calm-list-item">
                 <template v-slot:prepend>
-                  <v-avatar color="info" size="36">
-                    <v-icon icon="mdi-message"></v-icon>
+                  <v-avatar color="info" size="32" variant="tonal">
+                    <v-icon icon="mdi-message" size="16"></v-icon>
                   </v-avatar>
                 </template>
-                <v-list-item-title>{{ announcement.title }}</v-list-item-title>
-                <v-list-item-subtitle>
+                <v-list-item-title class="text-body-2">{{ announcement.title }}</v-list-item-title>
+                <v-list-item-subtitle class="text-caption">
                   {{ formatRelativeTime(announcement.createdAt) }}
-                  <span v-if="announcement.courseId" class="text-caption">
+                  <span v-if="announcement.courseId" class="text-grey-darken-1">
                     • {{ announcement.courseId.courseCode }}
                   </span>
                 </v-list-item-subtitle>
               </v-list-item>
             </v-list>
-            <v-card-text v-else class="text-center pa-8">
-              <v-icon icon="mdi-bullhorn-off" size="48" color="grey" class="mb-2"></v-icon>
-              <p class="mb-0">No recent announcements</p>
+            <v-card-text v-else class="text-center pa-6">
+              <v-icon icon="mdi-bullhorn-off" size="32" color="grey-lighten-1" class="mb-2" opacity="0.5"></v-icon>
+              <div class="text-caption text-grey-darken-1">No recent announcements</div>
             </v-card-text>
           </v-card>
         </v-col>
@@ -206,12 +209,20 @@
     </v-container>
 
     <!-- Quick Action Dialogs -->
-    <v-dialog v-model="quickActions.createAssignment" max-width="800px">
-      <CreateAssignmentDialog :course-id="myCourses[0]?._id" @close="quickActions.createAssignment = false" @created="onAssignmentCreated" />
+    <v-dialog v-model="quickActions.createAssignment" max-width="800px" scrollable>
+      <CreateAssignmentDialog 
+        :course-id="myCourses[0]?._id" 
+        @close="quickActions.createAssignment = false" 
+        @created="onAssignmentCreated" 
+      />
     </v-dialog>
 
-    <v-dialog v-model="quickActions.postAnnouncement" max-width="600px">
-      <PostAnnouncementDialog :course-id="myCourses[0]?._id" @close="quickActions.postAnnouncement = false" @posted="onAnnouncementPosted" />
+    <v-dialog v-model="quickActions.postAnnouncement" max-width="600px" scrollable>
+      <PostAnnouncementDialog 
+        :course-id="myCourses[0]?._id" 
+        @close="quickActions.postAnnouncement = false" 
+        @posted="onAnnouncementPosted" 
+      />
     </v-dialog>
   </div>
 </template>
@@ -243,7 +254,7 @@ const truncateText = (text, length) => {
 }
 
 const getCourseColor = (code) => {
-  const colors = ['primary', 'secondary', 'success', 'info', 'warning', 'error']
+  const colors = ['primary', 'secondary', 'info', 'warning']
   const index = code?.charCodeAt(0) || 0
   return colors[index % colors.length]
 }
@@ -258,7 +269,7 @@ const formatRelativeTime = (date) => {
   const diffDays = Math.floor(diffHours / 24)
 
   if (diffMins < 1) return 'Just now'
-  if (diffMins < 60) return `${diffMins} minutes ago`
+  if (diffMins < 60) return `${diffMins} min ago`
   if (diffHours < 24) return `${diffHours} hours ago`
   if (diffDays === 1) return 'Yesterday'
   return `${diffDays} days ago`
@@ -305,13 +316,63 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.section-underline {
+  width: 60px;
+  height: 3px;
+  background-color: rgb(var(--v-theme-primary));
+  transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.section-underline:hover {
+  width: 64px;
+}
+
+.section-underline-sm {
+  width: 40px;
+  height: 2px;
+  background-color: rgb(var(--v-theme-primary));
+  transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.section-underline-sm:hover {
+  width: 44px;
+}
+
+.border-bottom {
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.stat-card {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
 .course-card {
-  transition: all 0.3s ease;
-  height: 100%;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .course-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.calm-list {
+  background: transparent;
+}
+
+.calm-list-item {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 12px;
+}
+
+.calm-list-item:hover {
+  transform: translateX(4px);
+  background-color: rgba(99, 102, 241, 0.04);
+}
+
+.gap-2 {
+  gap: 8px;
 }
 </style>

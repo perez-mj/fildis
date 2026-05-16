@@ -1,103 +1,119 @@
 <!-- frontend/src/views/admin/ManageCourses.vue -->
- <template>
-  <v-container fluid>
-    <v-row>
-      <v-col cols="12">
-        <div class="d-flex justify-space-between align-center mb-6">
-          <v-btn color="primary" @click="openCreateDialog">
-            <v-icon left>mdi-plus</v-icon>
-            Create Course
-          </v-btn>
+<template>
+  <div class="manage-courses">
+    <v-container fluid class="pa-4 pa-sm-6">
+      <!-- Header -->
+      <div class="d-flex align-center justify-space-between flex-wrap mb-6">
+        <div>
+          <h1 class="text-h4 font-weight-light mb-2">Manage Courses</h1>
+          <div class="section-underline"></div>
         </div>
-      </v-col>
-    </v-row>
+        <v-btn color="primary" @click="openCreateDialog" rounded="pill" class="mt-3 mt-sm-0">
+          <v-icon start icon="mdi-plus" size="16"></v-icon>
+          Create Course
+        </v-btn>
+      </div>
 
-    <!-- Courses Table -->
-    <v-row>
-      <v-col cols="12">
-        <v-card elevation="2">
-          <v-card-title class="bg-grey-lighten-3">
-            <v-text-field
-              v-model="search"
-              prepend-inner-icon="mdi-magnify"
-              label="Search courses"
-              density="compact"
-              hide-details
-              variant="outlined"
-            ></v-text-field>
-          </v-card-title>
-          <v-data-table
-            :headers="headers"
-            :items="courses"
-            :search="search"
-            :loading="courseStore.loading"
-            items-per-page="10"
-            class="elevation-0"
-          >
-            <template v-slot:item.courseCode="{ item }">
-              <v-chip color="primary" size="small">{{ item.courseCode }}</v-chip>
-            </template>
+      <!-- Courses Table -->
+      <v-card variant="outlined">
+        <v-card-text>
+          <v-text-field
+            v-model="search"
+            prepend-inner-icon="mdi-magnify"
+            label="Search courses"
+            density="comfortable"
+            hide-details
+            variant="underlined"
+            clearable
+          ></v-text-field>
+        </v-card-text>
+        <v-data-table
+          :headers="headers"
+          :items="courses"
+          :search="search"
+          :loading="courseStore.loading"
+          :items-per-page="10"
+          class="calm-data-table"
+        >
+          <template v-slot:item.courseCode="{ item }">
+            <v-chip color="primary" size="x-small" variant="tonal">{{ item.courseCode }}</v-chip>
+          </template>
 
-            <template v-slot:item.credits="{ item }">
-              <v-chip size="small">{{ item.credits }} credits</v-chip>
-            </template>
+          <template v-slot:item.credits="{ item }">
+            <span class="text-caption">{{ item.credits }} credits</span>
+          </template>
 
-            <template v-slot:item.teacherName="{ item }">
-              <span v-if="item.teacher">
-                {{ item.teacher.firstName }} {{ item.teacher.lastName }}
-              </span>
-              <span v-else class="text-grey">Not Assigned</span>
-            </template>
+          <template v-slot:item.teacherName="{ item }">
+            <span class="text-body-2" v-if="item.teacher">
+              {{ item.teacher.firstName }} {{ item.teacher.lastName }}
+            </span>
+            <span v-else class="text-caption text-grey-darken-1">Not Assigned</span>
+          </template>
 
-            <template v-slot:item.enrolledCount="{ item }">
-              {{ item.students?.length || 0 }} / {{ item.maxStudents }}
-            </template>
+          <template v-slot:item.enrolledCount="{ item }">
+            <div class="d-flex align-center">
+              <span class="text-body-2 mr-2">{{ item.students?.length || 0 }} / {{ item.maxStudents || 50 }}</span>
+              <v-progress-linear
+                :model-value="((item.students?.length || 0) / (item.maxStudents || 50)) * 100"
+                :color="getProgressColor((item.students?.length || 0), (item.maxStudents || 50))"
+                height="3"
+                rounded
+                style="width: 60px"
+              ></v-progress-linear>
+            </div>
+          </template>
 
-            <template v-slot:item.isActive="{ item }">
-              <v-chip :color="item.isActive ? 'success' : 'error'" size="small">
-                {{ item.isActive ? 'Active' : 'Inactive' }}
-              </v-chip>
-            </template>
+          <template v-slot:item.isActive="{ item }">
+            <v-chip :color="item.isActive ? 'success' : 'grey'" size="x-small" variant="tonal">
+              {{ item.isActive ? 'Active' : 'Inactive' }}
+            </v-chip>
+          </template>
 
-            <template v-slot:item.actions="{ item }">
-              <v-btn
-                icon
-                size="small"
-                color="primary"
-                variant="text"
-                @click="editCourse(item)"
-              >
-                <v-icon>mdi-pencil</v-icon>
-              </v-btn>
-              <v-btn
-                icon
-                size="small"
-                color="error"
-                variant="text"
-                @click="confirmDelete(item)"
-              >
-                <v-icon>mdi-delete</v-icon>
-              </v-btn>
-            </template>
-          </v-data-table>
-        </v-card>
-      </v-col>
-    </v-row>
+          <template v-slot:item.actions="{ item }">
+            <v-btn
+              size="x-small"
+              color="primary"
+              variant="text"
+              icon="mdi-pencil"
+              @click="editCourse(item)"
+            ></v-btn>
+            <v-btn
+              size="x-small"
+              color="error"
+              variant="text"
+              icon="mdi-delete"
+              @click="confirmDelete(item)"
+            ></v-btn>
+          </template>
+
+          <template v-slot:no-data>
+            <div class="text-center pa-6">
+              <v-icon icon="mdi-book-open-variant" size="48" color="grey-lighten-1" class="mb-3" opacity="0.5"></v-icon>
+              <div class="text-h6 font-weight-light text-grey-darken-1">No courses found</div>
+              <div class="text-caption text-grey-darken-1 mt-1">Click Create Course to get started</div>
+            </div>
+          </template>
+        </v-data-table>
+      </v-card>
+    </v-container>
 
     <!-- Course Form Dialog -->
-    <v-dialog v-model="dialog" max-width="700px">
+    <v-dialog v-model="dialog" max-width="700px" scrollable>
       <v-card>
-        <v-card-title class="text-h5 bg-primary text-white pa-4">
-          {{ editingCourse ? 'Edit Course' : 'Create New Course' }}
+        <v-card-title class="pa-4 d-flex align-center justify-space-between border-bottom">
+          <span class="text-h6 font-weight-light">{{ editingCourse ? 'Edit Course' : 'Create Course' }}</span>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="dialog = false"></v-btn>
         </v-card-title>
-        <v-card-text class="pa-4">
+        
+        <v-card-text class="pa-4" style="max-height: 65vh; overflow-y: auto;">
           <v-form ref="form" v-model="valid">
             <v-row>
               <v-col cols="12" md="6">
                 <v-text-field
                   v-model="formData.courseCode"
                   label="Course Code"
-                  :rules="[v => !!v || 'Course code is required']"
+                  :rules="[v => !!v || 'Required']"
+                  variant="outlined"
                   required
                 ></v-text-field>
               </v-col>
@@ -105,7 +121,8 @@
                 <v-text-field
                   v-model="formData.courseName"
                   label="Course Name"
-                  :rules="[v => !!v || 'Course name is required']"
+                  :rules="[v => !!v || 'Required']"
+                  variant="outlined"
                   required
                 ></v-text-field>
               </v-col>
@@ -114,7 +131,8 @@
                   v-model="formData.description"
                   label="Description"
                   rows="3"
-                  :rules="[v => !!v || 'Description is required']"
+                  :rules="[v => !!v || 'Required']"
+                  variant="outlined"
                   required
                 ></v-textarea>
               </v-col>
@@ -125,16 +143,16 @@
                   type="number"
                   min="1"
                   max="6"
-                  :rules="[v => !!v || 'Credits are required']"
-                  required
+                  :rules="[v => !!v || 'Required']"
+                  variant="outlined"
                 ></v-text-field>
               </v-col>
               <v-col cols="12" md="4">
                 <v-text-field
                   v-model="formData.department"
                   label="Department"
-                  :rules="[v => !!v || 'Department is required']"
-                  required
+                  :rules="[v => !!v || 'Required']"
+                  variant="outlined"
                 ></v-text-field>
               </v-col>
               <v-col cols="12" md="4">
@@ -144,8 +162,8 @@
                   type="number"
                   min="1"
                   max="8"
-                  :rules="[v => !!v || 'Semester is required']"
-                  required
+                  :rules="[v => !!v || 'Required']"
+                  variant="outlined"
                 ></v-text-field>
               </v-col>
               <v-col cols="12" md="6">
@@ -155,50 +173,55 @@
                   item-title="fullName"
                   item-value="_id"
                   label="Assign Teacher"
+                  variant="outlined"
                   clearable
                 ></v-select>
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
                   v-model="formData.maxStudents"
-                  label="Maximum Students"
+                  label="Max Students"
                   type="number"
                   min="1"
-                  :rules="[v => !!v || 'Maximum students is required']"
-                  required
+                  :rules="[v => !!v || 'Required']"
+                  variant="outlined"
                 ></v-text-field>
               </v-col>
               <v-col cols="12" md="6">
-                <v-date-input
+                <v-text-field
                   v-model="formData.startDate"
                   label="Start Date"
-                  :rules="[v => !!v || 'Start date is required']"
-                  required
-                ></v-date-input>
+                  type="date"
+                  :rules="[v => !!v || 'Required']"
+                  variant="outlined"
+                ></v-text-field>
               </v-col>
               <v-col cols="12" md="6">
-                <v-date-input
+                <v-text-field
                   v-model="formData.endDate"
                   label="End Date"
-                  :rules="[v => !!v || 'End date is required']"
-                  required
-                ></v-date-input>
+                  type="date"
+                  :rules="[v => !!v || 'Required']"
+                  variant="outlined"
+                ></v-text-field>
               </v-col>
               <v-col cols="12">
                 <v-switch
                   v-model="formData.isActive"
                   label="Course Active"
-                  color="success"
+                  color="primary"
+                  hide-details
                 ></v-switch>
               </v-col>
             </v-row>
           </v-form>
         </v-card-text>
-        <v-card-actions class="pa-4">
+        
+        <v-card-actions class="pa-4 border-top">
           <v-spacer></v-spacer>
-          <v-btn variant="text" @click="dialog = false">Cancel</v-btn>
-          <v-btn color="primary" :loading="courseStore.loading" @click="saveCourse">
-            Save
+          <v-btn variant="text" @click="dialog = false" rounded="pill">Cancel</v-btn>
+          <v-btn color="primary" :loading="courseStore.loading" @click="saveCourse" rounded="pill">
+            {{ editingCourse ? 'Update' : 'Create' }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -207,30 +230,30 @@
     <!-- Delete Confirmation Dialog -->
     <v-dialog v-model="deleteDialog" max-width="400px">
       <v-card>
-        <v-card-title class="text-h5">Confirm Delete</v-card-title>
-        <v-card-text>
-          Are you sure you want to delete "{{ deleteItem?.courseName }}"?
-          This will also remove all related materials and assignments.
+        <v-card-title class="text-h6 font-weight-light pa-4 border-bottom">Delete Course</v-card-title>
+        <v-card-text class="pa-4">
+          Delete <strong>{{ deleteItem?.courseName }}</strong>?
+          <div class="text-error text-caption mt-2">This also removes all materials and assignments.</div>
         </v-card-text>
-        <v-card-actions>
+        <v-card-actions class="pa-4 border-top">
           <v-spacer></v-spacer>
-          <v-btn variant="text" @click="deleteDialog = false">Cancel</v-btn>
-          <v-btn color="error" :loading="courseStore.loading" @click="deleteCourse">
-            Delete
-          </v-btn>
+          <v-btn variant="text" @click="deleteDialog = false" rounded="pill">Cancel</v-btn>
+          <v-btn color="error" :loading="courseStore.loading" @click="deleteCourse" rounded="pill">Delete</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
-  </v-container>
+  </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useCourseStore } from '@/stores/courseStore'
 import { useUserStore } from '@/stores/userStore'
+import { inject } from 'vue'
 
 const courseStore = useCourseStore()
 const userStore = useUserStore()
+const snackbar = inject('snackbar')
 
 const courses = ref([])
 const teachers = ref([])
@@ -256,7 +279,7 @@ const formData = ref({
 })
 
 const headers = [
-  { title: 'Course Code', key: 'courseCode', sortable: true },
+  { title: 'Code', key: 'courseCode', sortable: true },
   { title: 'Course Name', key: 'courseName', sortable: true },
   { title: 'Credits', key: 'credits', sortable: true },
   { title: 'Department', key: 'department', sortable: true },
@@ -265,6 +288,13 @@ const headers = [
   { title: 'Status', key: 'isActive', sortable: true },
   { title: 'Actions', key: 'actions', sortable: false, align: 'center' }
 ]
+
+const getProgressColor = (current, max) => {
+  const percentage = (current / max) * 100
+  if (percentage >= 90) return 'error'
+  if (percentage >= 70) return 'warning'
+  return 'success'
+}
 
 const loadCourses = async () => {
   try {
@@ -329,13 +359,16 @@ const saveCourse = async () => {
   try {
     if (editingCourse.value) {
       await courseStore.updateCourse(editingCourse.value._id, formData.value)
+      snackbar.value = { show: true, text: 'Course updated!', color: 'success' }
     } else {
       await courseStore.createCourse(formData.value)
+      snackbar.value = { show: true, text: 'Course created!', color: 'success' }
     }
     dialog.value = false
     await loadCourses()
   } catch (error) {
     console.error('Failed to save course:', error)
+    snackbar.value = { show: true, text: 'Failed to save course', color: 'error' }
   }
 }
 
@@ -349,8 +382,10 @@ const deleteCourse = async () => {
     await courseStore.deleteCourse(deleteItem.value._id)
     deleteDialog.value = false
     await loadCourses()
+    snackbar.value = { show: true, text: 'Course deleted', color: 'success' }
   } catch (error) {
     console.error('Failed to delete course:', error)
+    snackbar.value = { show: true, text: 'Failed to delete course', color: 'error' }
   }
 }
 
@@ -359,3 +394,35 @@ onMounted(() => {
   loadTeachers()
 })
 </script>
+
+<style scoped>
+.section-underline {
+  width: 60px;
+  height: 3px;
+  background-color: rgb(var(--v-theme-primary));
+  transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.section-underline:hover {
+  width: 64px;
+}
+
+.border-bottom {
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.border-top {
+  border-top: 1px solid #E2E8F0;
+}
+
+.calm-data-table :deep(.v-data-table__th) {
+  font-weight: 500;
+  color: #64748B;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.calm-data-table :deep(tr:hover) {
+  background-color: rgba(99, 102, 241, 0.04);
+}
+</style>

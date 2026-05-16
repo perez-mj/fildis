@@ -1,76 +1,72 @@
 <!-- frontend/src/views/teacher/AssignmentSubmissions.vue -->
 <template>
   <div class="assignment-submissions">
-    <v-container fluid>
-      <!-- Header -->
-      <v-row>
-        <v-col cols="12">
-          <v-card class="mb-4" color="primary" variant="tonal">
-            <v-card-text class="pa-4">
-              <div class="d-flex align-center justify-space-between flex-wrap">
-                <div class="d-flex align-center">
-                  <v-btn
-                    icon="mdi-arrow-left"
-                    variant="text"
-                    @click="$router.back()"
-                    class="mr-3"
-                  ></v-btn>
-                  <div>
-                    <div class="text-overline">Assignment Submissions</div>
-                    <h1 class="text-h4">{{ assignment?.title || 'Loading...' }}</h1>
-                    <div class="text-subtitle-1">{{ getCourseName() }}</div>
-                  </div>
-                </div>
-                <div class="d-flex ga-2 mt-2 mt-sm-0">
-                  <v-chip color="info" variant="flat">
-                    <v-icon start icon="mdi-star" size="small"></v-icon>
-                    Max Score: {{ assignment?.maxScore || 0 }}
-                  </v-chip>
-                  <v-chip :color="getDueDateColor()" variant="flat">
-                    <v-icon start icon="mdi-calendar" size="small"></v-icon>
-                    Due: {{ formatDateTime(assignment?.dueDate) }}
-                  </v-chip>
-                </div>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
+    <v-container fluid class="pa-4 pa-sm-6">
+      <!-- Header with accent underline -->
+      <div class="mb-6">
+        <div class="d-flex align-center justify-space-between flex-wrap">
+          <div class="d-flex align-center">
+            <v-btn
+              icon="mdi-arrow-left"
+              variant="text"
+              @click="$router.back()"
+              class="mr-3"
+              color="primary"
+            ></v-btn>
+            <div>
+              <div class="text-overline text-grey-darken-1">Assignment Submissions</div>
+              <h1 class="text-h4 font-weight-light mb-2">{{ assignment?.title || 'Loading...' }}</h1>
+              <div class="section-underline"></div>
+              <div class="text-subtitle-1 text-grey-darken-1 mt-2">{{ getCourseName() }}</div>
+            </div>
+          </div>
+          <div class="d-flex ga-2 mt-3 mt-sm-0">
+            <v-chip color="primary" variant="tonal" size="small">
+              <v-icon start icon="mdi-star" size="14"></v-icon>
+              Max Score: {{ assignment?.maxScore || 0 }}
+            </v-chip>
+            <v-chip :color="getDueDateColor()" variant="tonal" size="small">
+              <v-icon start icon="mdi-calendar" size="14"></v-icon>
+              Due: {{ formatDateTime(assignment?.dueDate) }}
+            </v-chip>
+          </div>
+        </div>
+      </div>
 
-      <!-- Stats Cards -->
-      <v-row>
+      <!-- Stats Cards - Minimalist with outlines -->
+      <v-row class="mb-6">
         <v-col cols="12" sm="6" md="3">
-          <v-card class="text-center pa-3" color="info" variant="tonal">
-            <v-icon icon="mdi-file-document" size="32"></v-icon>
-            <div class="text-h5 font-weight-bold mt-1">{{ submissions.length }}</div>
-            <div class="text-caption">Total Submissions</div>
+          <v-card variant="outlined" class="text-center pa-4 calm-stat-card">
+            <v-icon icon="mdi-file-document" size="28" color="primary" class="mb-2"></v-icon>
+            <div class="text-h5 font-weight-light mt-1">{{ submissions.length }}</div>
+            <div class="text-caption text-grey-darken-1">Total Submissions</div>
           </v-card>
         </v-col>
         <v-col cols="12" sm="6" md="3">
-          <v-card class="text-center pa-3" color="warning" variant="tonal">
-            <v-icon icon="mdi-clock" size="32"></v-icon>
-            <div class="text-h5 font-weight-bold mt-1">{{ pendingSubmissions.length }}</div>
-            <div class="text-caption">Pending Grading</div>
+          <v-card variant="outlined" class="text-center pa-4 calm-stat-card">
+            <v-icon icon="mdi-clock" size="28" color="warning" class="mb-2"></v-icon>
+            <div class="text-h5 font-weight-light mt-1">{{ pendingSubmissions.length }}</div>
+            <div class="text-caption text-grey-darken-1">Pending Grading</div>
           </v-card>
         </v-col>
         <v-col cols="12" sm="6" md="3">
-          <v-card class="text-center pa-3" color="success" variant="tonal">
-            <v-icon icon="mdi-check-circle" size="32"></v-icon>
-            <div class="text-h5 font-weight-bold mt-1">{{ gradedSubmissions.length }}</div>
-            <div class="text-caption">Graded</div>
+          <v-card variant="outlined" class="text-center pa-4 calm-stat-card">
+            <v-icon icon="mdi-check-circle" size="28" color="success" class="mb-2"></v-icon>
+            <div class="text-h5 font-weight-light mt-1">{{ gradedSubmissions.length }}</div>
+            <div class="text-caption text-grey-darken-1">Graded</div>
           </v-card>
         </v-col>
         <v-col cols="12" sm="6" md="3">
-          <v-card class="text-center pa-3" color="error" variant="tonal">
-            <v-icon icon="mdi-alert-circle" size="32"></v-icon>
-            <div class="text-h5 font-weight-bold mt-1">{{ lateSubmissions.length }}</div>
-            <div class="text-caption">Late Submissions</div>
+          <v-card variant="outlined" class="text-center pa-4 calm-stat-card">
+            <v-icon icon="mdi-alert-circle" size="28" color="error" class="mb-2"></v-icon>
+            <div class="text-h5 font-weight-light mt-1">{{ lateSubmissions.length }}</div>
+            <div class="text-caption text-grey-darken-1">Late Submissions</div>
           </v-card>
         </v-col>
       </v-row>
 
       <!-- Filters -->
-      <v-row class="mt-2">
+      <v-row class="mb-4">
         <v-col cols="12" md="4">
           <v-select
             v-model="statusFilter"
@@ -78,8 +74,8 @@
             label="Filter by Status"
             prepend-inner-icon="mdi-filter"
             density="comfortable"
-            variant="outlined"
             clearable
+            variant="outlined"
           ></v-select>
         </v-col>
         <v-col cols="12" md="4">
@@ -88,12 +84,12 @@
             label="Search by Student Name"
             prepend-inner-icon="mdi-magnify"
             density="comfortable"
-            variant="outlined"
             clearable
+            variant="outlined"
           ></v-text-field>
         </v-col>
-        <v-col cols="12" md="4" class="d-flex justify-end">
-          <v-btn color="primary" variant="outlined" @click="exportSubmissions" prepend-icon="mdi-download">
+        <v-col cols="12" md="4" class="d-flex justify-md-end">
+          <v-btn color="primary" variant="outlined" @click="exportSubmissions" prepend-icon="mdi-download" rounded="pill">
             Export to CSV
           </v-btn>
         </v-col>
@@ -102,38 +98,38 @@
       <!-- Submissions Table -->
       <v-row>
         <v-col cols="12">
-          <v-card>
+          <v-card variant="outlined" class="calm-table-card">
             <v-data-table
               :headers="headers"
               :items="filteredSubmissions"
               :loading="loading"
               :items-per-page="10"
               hover
-              class="elevation-1"
+              class="calm-data-table"
             >
               <template v-slot:item.student="{ item }">
                 <div class="d-flex align-center">
-                  <v-avatar size="32" class="mr-2" :color="getAvatarColor(item.studentId?.firstName)">
-                    <span class="text-caption">{{ getInitials(item.studentId) }}</span>
+                  <v-avatar size="32" class="mr-2" :color="getAvatarColor(item.studentId?.firstName)" variant="tonal">
+                    <span class="text-caption font-weight-medium">{{ getInitials(item.studentId) }}</span>
                   </v-avatar>
                   <div>
-                    <div>{{ item.studentId?.firstName }} {{ item.studentId?.lastName }}</div>
-                    <div class="text-caption text-medium-emphasis">{{ item.studentId?.studentId }}</div>
+                    <div class="text-body-2">{{ item.studentId?.firstName }} {{ item.studentId?.lastName }}</div>
+                    <div class="text-caption text-grey-darken-1">{{ item.studentId?.studentId }}</div>
                   </div>
                 </div>
               </template>
 
               <template v-slot:item.submissionDate="{ item }">
                 <div>
-                  <div>{{ formatDateTime(item.submissionDate) }}</div>
-                  <v-chip v-if="item.isLate" color="error" size="x-small" class="mt-1">
+                  <div class="text-body-2">{{ formatDateTime(item.submissionDate) }}</div>
+                  <v-chip v-if="item.isLate" color="error" size="x-small" variant="tonal" class="mt-1">
                     Late
                   </v-chip>
                 </div>
               </template>
 
               <template v-slot:item.status="{ item }">
-                <v-chip :color="getStatusColor(item.status)" size="small">
+                <v-chip :color="getStatusColor(item.status)" size="small" variant="tonal">
                   {{ item.status?.toUpperCase() || 'SUBMITTED' }}
                 </v-chip>
               </template>
@@ -143,21 +139,22 @@
                   v-if="item.submittedFiles?.length"
                   size="small"
                   variant="text"
-                  color="info"
+                  color="primary"
                   prepend-icon="mdi-paperclip"
                   @click="viewFiles(item)"
+                  rounded="pill"
                 >
                   {{ item.submittedFiles.length }} file(s)
                 </v-btn>
-                <span v-else class="text-caption text-medium-emphasis">No files</span>
+                <span v-else class="text-caption text-grey-darken-1">No files</span>
               </template>
 
               <template v-slot:item.grade="{ item }">
                 <div v-if="item.grade">
-                  <div class="font-weight-bold">{{ item.grade.score }}/{{ assignment?.maxScore }}</div>
-                  <div class="text-caption text-medium-emphasis">{{ truncateText(item.grade.feedback, 30) }}</div>
+                  <div class="font-weight-medium">{{ item.grade.score }}/{{ assignment?.maxScore }}</div>
+                  <div class="text-caption text-grey-darken-1">{{ truncateText(item.grade.feedback, 30) }}</div>
                 </div>
-                <span v-else class="text-caption text-medium-emphasis">Not graded</span>
+                <span v-else class="text-caption text-grey-darken-1">—</span>
               </template>
 
               <template v-slot:item.actions="{ item }">
@@ -167,9 +164,28 @@
                   variant="text"
                   :to="`/teacher/submissions/${item._id}/grade`"
                   :prepend-icon="item.status === 'graded' ? 'mdi-pencil' : 'mdi-check-circle'"
+                  rounded="pill"
                 >
                   {{ item.status === 'graded' ? 'Regrade' : 'Grade' }}
                 </v-btn>
+              </template>
+
+              <template v-slot:loading>
+                <div class="text-center pa-4">
+                  <div class="calm-loading-dots">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                  </div>
+                </div>
+              </template>
+
+              <template v-slot:no-data>
+                <div class="text-center pa-8">
+                  <v-icon icon="mdi-inbox" size="48" color="grey-lighten-1" class="mb-3" opacity="0.5"></v-icon>
+                  <div class="text-h6 font-weight-light text-grey-darken-1">No submissions yet</div>
+                  <div class="text-caption text-grey-darken-1 mt-1">Students will appear here once they submit</div>
+                </div>
               </template>
             </v-data-table>
           </v-card>
@@ -177,31 +193,32 @@
       </v-row>
     </v-container>
 
-    <!-- View Files Dialog -->
-    <v-dialog v-model="showFilesDialog" max-width="600px">
-      <v-card>
-        <v-card-title class="text-h5 pa-4 bg-info">
-          <span class="text-white">Submitted Files</span>
-          <v-spacer></v-spacer>
-          <v-btn icon="mdi-close" variant="text" @click="showFilesDialog = false" color="white"></v-btn>
+    <!-- View Files Dialog - Minimalist -->
+    <v-dialog v-model="showFilesDialog" max-width="600px" scrollable>
+      <v-card variant="outlined">
+        <v-card-title class="pa-4 d-flex align-center justify-space-between">
+          <span class="text-h6 font-weight-light">Submitted Files</span>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="showFilesDialog = false"></v-btn>
         </v-card-title>
         
+        <v-divider></v-divider>
+
         <v-card-text class="pa-4">
-          <div class="mb-3">
+          <div class="mb-3 text-caption text-grey-darken-1">
             <strong>Student:</strong> {{ currentFilesSubmission?.studentId?.firstName }} {{ currentFilesSubmission?.studentId?.lastName }}
           </div>
-          <v-list>
-            <v-list-item v-for="(file, index) in currentFiles" :key="index">
+          <v-list class="calm-list">
+            <v-list-item v-for="(file, index) in currentFiles" :key="index" class="calm-list-item">
               <template v-slot:prepend>
-                <v-icon :icon="getFileIcon(file.fileType)"></v-icon>
+                <v-icon :icon="getFileIcon(file.fileType)" color="primary" size="24"></v-icon>
               </template>
-              <v-list-item-title>{{ file.originalFileName }}</v-list-item-title>
-              <v-list-item-subtitle>{{ formatFileSize(file.fileSize) }}</v-list-item-subtitle>
+              <v-list-item-title class="text-body-2">{{ file.originalFileName }}</v-list-item-title>
+              <v-list-item-subtitle class="text-caption">{{ formatFileSize(file.fileSize) }}</v-list-item-subtitle>
               <template v-slot:append>
-                <v-btn size="small" variant="text" color="primary" :href="file.webViewLink" target="_blank">
+                <v-btn size="small" variant="text" color="primary" :href="file.webViewLink" target="_blank" rounded="pill">
                   View
                 </v-btn>
-                <v-btn size="small" variant="text" color="success" :href="file.webContentLink" download>
+                <v-btn size="small" variant="text" color="success" :href="file.webContentLink" download rounded="pill">
                   Download
                 </v-btn>
               </template>
@@ -278,7 +295,7 @@ const filteredSubmissions = computed(() => {
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter(s => 
-          s.studentId?.firstName?.toLowerCase().includes(query) ||
+      s.studentId?.firstName?.toLowerCase().includes(query) ||
       s.studentId?.lastName?.toLowerCase().includes(query) ||
       `${s.studentId?.firstName} ${s.studentId?.lastName}`.toLowerCase().includes(query)
     )
@@ -317,7 +334,7 @@ const getStatusColor = (status) => {
 }
 
 const getAvatarColor = (name) => {
-  const colors = ['primary', 'secondary', 'success', 'info', 'warning', 'error']
+  const colors = ['primary', 'secondary', 'info', 'warning']
   const index = name?.charCodeAt(0) || 0
   return colors[index % colors.length]
 }
@@ -347,6 +364,7 @@ const truncateText = (text, length) => {
 const formatDateTime = (date) => {
   if (!date) return 'N/A'
   return new Date(date).toLocaleString('en-US', {
+    timeZone: 'Asia/Manila',
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
@@ -427,12 +445,10 @@ const loadData = async () => {
   
   loading.value = true
   try {
-    // Find assignment in teacherStore courses
     if (teacherStore.courses.length === 0) {
       await teacherStore.fetchMyCourses()
     }
     
-    // Find the assignment in courses
     for (const course of teacherStore.courses) {
       const foundAssignment = course.assignments?.find(a => a._id === assignmentId)
       if (foundAssignment) {
@@ -445,7 +461,6 @@ const loadData = async () => {
       throw new Error('Assignment not found')
     }
     
-    // Get submissions for this assignment
     const submissionsData = await teacherService.getAssignmentSubmissions(assignmentId)
     submissions.value = submissionsData || []
     
@@ -467,8 +482,71 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.v-data-table :deep(.v-data-table__th) {
-  font-weight: 600;
-  background-color: rgb(var(--v-theme-grey-lighten-4));
+.section-underline {
+  width: 60px;
+  height: 3px;
+  background-color: rgb(var(--v-theme-primary));
+  transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.section-underline:hover {
+  width: 64px;
+}
+
+.calm-stat-card {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.calm-stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.calm-table-card {
+  overflow: hidden;
+}
+
+.calm-list {
+  background: transparent;
+}
+
+.calm-list-item {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.calm-list-item:hover {
+  transform: translateX(4px);
+}
+
+.calm-loading-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.calm-loading-dots .dot {
+  width: 8px;
+  height: 8px;
+  background-color: rgb(var(--v-theme-primary));
+  border-radius: 50%;
+  animation: bounce 1.4s infinite ease-in-out;
+}
+
+.calm-loading-dots .dot:nth-child(1) { animation-delay: -0.32s; }
+.calm-loading-dots .dot:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+:deep(.calm-data-table .v-data-table__th) {
+  font-weight: 500;
+  color: #64748B;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+:deep(.calm-data-table tr:hover) {
+  background-color: rgba(99, 102, 241, 0.04);
 }
 </style>

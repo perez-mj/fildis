@@ -1,6 +1,11 @@
 <!-- frontend/src/views/student/MyGrades.vue -->
 <template>
   <v-container fluid class="grades-container">
+    <!-- Page Header -->
+    <div class="page-header mb-6">
+        <h1 class="text-h4 font-weight-light">My Grades</h1>
+        <div class="header-accent"></div>
+    </div>
 
     <!-- Statistics Cards - Minimalist -->
     <v-row class="mb-6 stats-row">

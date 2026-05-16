@@ -1,6 +1,6 @@
 <!-- frontend/src/components/student/AIReviewerPanel.vue -->
 <template>
-  <v-card class="ai-reviewer-panel rounded-xl" elevation="2">
+  <v-card class="ai-reviewer-panel">
     <v-card-title class="d-flex justify-space-between align-center pa-3 pa-sm-4">
       <div class="d-flex align-center flex-wrap">
         <div class="panel-icon success me-2">

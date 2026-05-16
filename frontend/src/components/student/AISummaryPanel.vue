@@ -1,6 +1,6 @@
 <!-- frontend/src/components/student/AISummaryPanel.vue -->
 <template>
-  <v-card class="ai-summary-panel rounded-xl" elevation="0">
+  <v-card class="ai-summary-panel">
     <v-card-title class="d-flex justify-space-between align-center pa-3 pa-sm-4">
       <div class="d-flex align-center flex-wrap">
         <div class="panel-icon primary me-2">

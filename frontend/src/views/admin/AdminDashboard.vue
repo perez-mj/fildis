@@ -1,158 +1,160 @@
 <!-- frontend/src/views/admin/AdminDashboard.vue -->
 <template>
-  <v-container fluid>
-
-    <!-- Stats Cards -->
-    <v-row>
-      <v-col cols="12" sm="6" md="3">
-        <v-card class="pa-4" elevation="2" color="primary" variant="tonal">
-          <div class="d-flex align-center justify-space-between">
-            <div>
-              <div class="text-subtitle-1 font-weight-medium">Total Students</div>
-              <div class="text-h3 font-weight-bold">{{ stats.totalStudents }}</div>
-            </div>
-            <v-icon size="48" color="primary">mdi-account-group</v-icon>
+  <div class="admin-dashboard">
+    <v-container fluid class="pa-4 pa-sm-6">
+      <!-- Header -->
+      <div class="mb-6">
+        <div class="d-flex align-center justify-space-between flex-wrap">
+          <div>
+            <h1 class="text-h4 font-weight-light mb-2">Dashboard</h1>
+            <div class="section-underline"></div>
           </div>
-        </v-card>
-      </v-col>
+        </div>
+      </div>
 
-      <v-col cols="12" sm="6" md="3">
-        <v-card class="pa-4" elevation="2" color="success" variant="tonal">
-          <div class="d-flex align-center justify-space-between">
-            <div>
-              <div class="text-subtitle-1 font-weight-medium">Total Teachers</div>
-              <div class="text-h3 font-weight-bold">{{ stats.totalTeachers }}</div>
-            </div>
-            <v-icon size="48" color="success">mdi-school</v-icon>
-          </div>
-        </v-card>
-      </v-col>
+      <!-- Stats Cards -->
+      <v-row>
+        <v-col cols="12" sm="6" md="3">
+          <v-card variant="outlined" class="stat-card text-center pa-4">
+            <v-icon icon="mdi-account-group" size="28" color="primary" class="mb-2"></v-icon>
+            <div class="text-h4 font-weight-light mt-1">{{ stats.totalStudents || 0 }}</div>
+            <div class="text-caption text-grey-darken-1">Total Students</div>
+          </v-card>
+        </v-col>
 
-      <v-col cols="12" sm="6" md="3">
-        <v-card class="pa-4" elevation="2" color="info" variant="tonal">
-          <div class="d-flex align-center justify-space-between">
-            <div>
-              <div class="text-subtitle-1 font-weight-medium">Total Courses</div>
-              <div class="text-h3 font-weight-bold">{{ stats.totalCourses }}</div>
-            </div>
-            <v-icon size="48" color="info">mdi-book-open-page-variant</v-icon>
-          </div>
-        </v-card>
-      </v-col>
+        <v-col cols="12" sm="6" md="3">
+          <v-card variant="outlined" class="stat-card text-center pa-4">
+            <v-icon icon="mdi-school" size="28" color="success" class="mb-2"></v-icon>
+            <div class="text-h4 font-weight-light mt-1">{{ stats.totalTeachers || 0 }}</div>
+            <div class="text-caption text-grey-darken-1">Total Teachers</div>
+          </v-card>
+        </v-col>
 
-      <v-col cols="12" sm="6" md="3">
-        <v-card class="pa-4" elevation="2" color="warning" variant="tonal">
-          <div class="d-flex align-center justify-space-between">
-            <div>
-              <div class="text-subtitle-1 font-weight-medium">Active Courses</div>
-              <div class="text-h3 font-weight-bold">{{ stats.activeCourses }}</div>
-            </div>
-            <v-icon size="48" color="warning">mdi-check-circle</v-icon>
-          </div>
-        </v-card>
-      </v-col>
-    </v-row>
+        <v-col cols="12" sm="6" md="3">
+          <v-card variant="outlined" class="stat-card text-center pa-4">
+            <v-icon icon="mdi-book-open-variant" size="28" color="info" class="mb-2"></v-icon>
+            <div class="text-h4 font-weight-light mt-1">{{ stats.totalCourses || 0 }}</div>
+            <div class="text-caption text-grey-darken-1">Total Courses</div>
+          </v-card>
+        </v-col>
 
-    <!-- Quick Actions -->
-    <v-row class="mt-4">
-      <v-col cols="12">
-        <v-card elevation="2">
-          <v-card-title class="text-h5 font-weight-bold bg-grey-lighten-3">
-            Quick Actions
-          </v-card-title>
-          <v-card-text class="pa-4">
-            <v-row>
-              <v-col cols="12" sm="6" md="3">
-                <v-btn
-                  block
-                  color="primary"
-                  variant="outlined"
-                  height="80"
-                  to="/admin/teachers"
-                >
-                  <v-icon left size="32">mdi-account-plus</v-icon>
-                  <span class="ml-2">Manage Teachers</span>
-                </v-btn>
-              </v-col>
-              <v-col cols="12" sm="6" md="3">
-                <v-btn
-                  block
-                  color="success"
-                  variant="outlined"
-                  height="80"
-                  to="/admin/students"
-                >
-                  <v-icon left size="32">mdi-account-plus</v-icon>
-                  <span class="ml-2">Manage Students</span>
-                </v-btn>
-              </v-col>
-              <v-col cols="12" sm="6" md="3">
-                <v-btn
-                  block
-                  color="info"
-                  variant="outlined"
-                  height="80"
-                  to="/admin/courses"
-                >
-                  <v-icon left size="32">mdi-plus-circle</v-icon>
-                  <span class="ml-2">Create Course</span>
-                </v-btn>
-              </v-col>
-              <v-col cols="12" sm="6" md="3">
-                <v-btn
-                  block
-                  color="warning"
-                  variant="outlined"
-                  height="80"
-                  to="/admin/enrollments"
-                >
-                  <v-icon left size="32">mdi-account-check</v-icon>
-                  <span class="ml-2">Enroll Students</span>
-                </v-btn>
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+        <v-col cols="12" sm="6" md="3">
+          <v-card variant="outlined" class="stat-card text-center pa-4">
+            <v-icon icon="mdi-check-circle" size="28" color="success" class="mb-2"></v-icon>
+            <div class="text-h4 font-weight-light mt-1">{{ stats.activeCourses || 0 }}</div>
+            <div class="text-caption text-grey-darken-1">Active Courses</div>
+          </v-card>
+        </v-col>
+      </v-row>
 
-    <!-- Recent Activity -->
-    <v-row class="mt-4">
-      <v-col cols="12">
-        <v-card elevation="2">
-          <v-card-title class="text-h5 font-weight-bold bg-grey-lighten-3">
-            Recent Enrollments
-          </v-card-title>
-          <v-card-text>
-            <v-list lines="two">
-              <v-list-item
-                v-for="enrollment in recentEnrollments"
-                :key="enrollment._id"
-                :title="`${enrollment.student[0]?.firstName} ${enrollment.student[0]?.lastName}`"
-                :subtitle="`Enrolled in ${enrollment.courseName}`"
-              >
+      <!-- Quick Actions -->
+      <v-row class="mt-2">
+        <v-col cols="12">
+          <v-card variant="outlined">
+            <v-card-title class="text-subtitle-1 font-weight-light pa-3 border-bottom">
+              Quick Actions
+            </v-card-title>
+            <v-card-text class="pa-4">
+              <v-row>
+                <v-col cols="12" sm="6" md="3">
+                  <v-btn
+                    block
+                    color="primary"
+                    variant="outlined"
+                    height="72"
+                    to="/admin/teachers"
+                    rounded="lg"
+                    class="quick-action-btn"
+                  >
+                    <v-icon start size="24">mdi-account-plus</v-icon>
+                    Manage Teachers
+                  </v-btn>
+                </v-col>
+                <v-col cols="12" sm="6" md="3">
+                  <v-btn
+                    block
+                    color="success"
+                    variant="outlined"
+                    height="72"
+                    to="/admin/students"
+                    rounded="lg"
+                    class="quick-action-btn"
+                  >
+                    <v-icon start size="24">mdi-account-plus</v-icon>
+                    Manage Students
+                  </v-btn>
+                </v-col>
+                <v-col cols="12" sm="6" md="3">
+                  <v-btn
+                    block
+                    color="info"
+                    variant="outlined"
+                    height="72"
+                    to="/admin/courses"
+                    rounded="lg"
+                    class="quick-action-btn"
+                  >
+                    <v-icon start size="24">mdi-plus-circle</v-icon>
+                    Create Course
+                  </v-btn>
+                </v-col>
+                <v-col cols="12" sm="6" md="3">
+                  <v-btn
+                    block
+                    color="warning"
+                    variant="outlined"
+                    height="72"
+                    to="/admin/enrollment"
+                    rounded="lg"
+                    class="quick-action-btn"
+                  >
+                    <v-icon start size="24">mdi-account-check</v-icon>
+                    Enroll Students
+                  </v-btn>
+                </v-col>
+              </v-row>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <!-- Recent Enrollments -->
+      <v-row class="mt-4">
+        <v-col cols="12">
+          <v-card variant="outlined">
+            <v-card-title class="text-subtitle-1 font-weight-light pa-3 border-bottom">
+              <v-icon start icon="mdi-history" size="16"></v-icon>
+              Recent Enrollments
+            </v-card-title>
+            <v-list v-if="recentEnrollments.length" class="calm-list">
+              <v-list-item v-for="enrollment in recentEnrollments" :key="enrollment._id" class="calm-list-item">
                 <template v-slot:prepend>
-                  <v-avatar color="primary">
-                    <v-icon>mdi-account</v-icon>
+                  <v-avatar size="32" color="primary" variant="tonal">
+                    <v-icon icon="mdi-account" size="16"></v-icon>
                   </v-avatar>
                 </template>
+                <v-list-item-title class="text-body-2">
+                  {{ enrollment.student?.firstName }} {{ enrollment.student?.lastName }}
+                </v-list-item-title>
+                <v-list-item-subtitle class="text-caption text-grey-darken-1">
+                  Enrolled in {{ enrollment.courseName }}
+                </v-list-item-subtitle>
                 <template v-slot:append>
-                  <v-chip size="small" color="success">
-                    {{ formatDate(enrollment.updatedAt) }}
-                  </v-chip>
+                  <span class="text-caption text-grey-darken-1">
+                    {{ formatDate(enrollment.enrolledAt) }}
+                  </span>
                 </template>
               </v-list-item>
-              <v-list-item v-if="recentEnrollments.length === 0">
-                <div class="text-center pa-4 text-grey">
-                  No recent enrollments
-                </div>
-              </v-list-item>
             </v-list>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-  </v-container>
+            <v-card-text v-else class="text-center pa-6">
+              <v-icon icon="mdi-account-group" size="32" color="grey-lighten-1" class="mb-2" opacity="0.5"></v-icon>
+              <div class="text-caption text-grey-darken-1">No recent enrollments</div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-container>
+  </div>
 </template>
 
 <script setup>
@@ -174,7 +176,7 @@ const recentEnrollments = ref([])
 const formatDate = (date) => {
   if (!date) return ''
   const d = new Date(date)
-  return d.toLocaleDateString()
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
 const loadStats = async () => {
@@ -191,3 +193,50 @@ onMounted(() => {
   loadStats()
 })
 </script>
+
+<style scoped>
+.section-underline {
+  width: 60px;
+  height: 3px;
+  background-color: rgb(var(--v-theme-primary));
+  transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.section-underline:hover {
+  width: 64px;
+}
+
+.border-bottom {
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.stat-card {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.quick-action-btn {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.quick-action-btn:hover {
+  transform: translateY(-1px);
+}
+
+.calm-list {
+  background: transparent;
+}
+
+.calm-list-item {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 12px;
+}
+
+.calm-list-item:hover {
+  transform: translateX(4px);
+  background-color: rgba(99, 102, 241, 0.04);
+}
+</style>

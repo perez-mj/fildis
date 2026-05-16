@@ -1,10 +1,9 @@
 <!-- frontend/src/components/teacher/PostAnnouncementDialog.vue -->
 <template>
   <v-card>
-    <v-card-title class="text-h5 pa-4 bg-primary">
-      <span class="text-white">Post Announcement</span>
-      <v-spacer></v-spacer>
-      <v-btn icon="mdi-close" variant="text" @click="$emit('close')" color="white"></v-btn>
+    <v-card-title class="pa-4 d-flex align-center justify-space-between border-bottom">
+      <span class="text-h6 font-weight-light">Post Announcement</span>
+      <v-btn icon="mdi-close" variant="text" size="small" @click="$emit('close')"></v-btn>
     </v-card-title>
     
     <v-card-text class="pa-4">
@@ -55,9 +54,9 @@
               v-model="formData.isPinned"
               label="Pin this announcement"
               color="primary"
-              hint="Pinned announcements appear at the top"
-              persistent-hint
+              hide-details
             ></v-switch>
+            <div class="text-caption text-grey-darken-1 mt-1">Pinned announcements appear at the top</div>
           </v-col>
         </v-row>
 
@@ -72,10 +71,10 @@
         ></v-text-field>
 
         <!-- Quick Templates -->
-        <v-card variant="tonal" class="pa-3 mt-2">
+        <v-card variant="tonal" class="pa-3 mt-3">
           <div class="d-flex align-center justify-space-between mb-2">
-            <span class="text-subtitle-2">Quick Templates</span>
-            <v-btn size="small" color="primary" variant="text" @click="useTemplate">
+            <span class="text-caption font-weight-medium">Quick Templates</span>
+            <v-btn size="x-small" color="primary" variant="text" @click="showTemplateHint" rounded="pill">
               Use Template
             </v-btn>
           </div>
@@ -83,8 +82,8 @@
             <v-chip
               v-for="template in templates"
               :key="template.title"
-              size="small"
-              color="info"
+              size="x-small"
+              color="primary"
               variant="outlined"
               @click="applyTemplate(template)"
             >
@@ -92,51 +91,15 @@
             </v-chip>
           </v-chip-group>
         </v-card>
-
-        <!-- Preview -->
-        <v-card variant="outlined" class="mt-3">
-          <v-card-title class="text-subtitle-2 pa-3 bg-grey-lighten-3">
-            <v-icon start icon="mdi-eye" size="small"></v-icon>
-            Preview
-          </v-card-title>
-          <v-card-text class="pa-3">
-            <div class="d-flex align-center mb-2">
-              <v-avatar size="32" color="primary">
-                <v-icon icon="mdi-teacher" size="small"></v-icon>
-              </v-avatar>
-              <div class="ml-2">
-                <div class="text-caption font-weight-bold">{{ authStore.userName }}</div>
-                <div class="text-caption text-medium-emphasis">Teacher</div>
-              </div>
-            </div>
-            
-            <v-chip 
-              v-if="formData.priority !== 'normal'" 
-              :color="getPriorityColor(formData.priority)" 
-              size="x-small" 
-              class="mb-2"
-            >
-              {{ formData.priority.toUpperCase() }}
-            </v-chip>
-            
-            <h4 class="text-subtitle-1 mb-1">{{ formData.title || 'Announcement Title' }}</h4>
-            <p class="text-caption">{{ truncateText(formData.content || 'Your announcement content will appear here...', 150) }}</p>
-            
-            <div v-if="formData.isPinned" class="mt-1">
-              <v-icon icon="mdi-pin" size="x-small" color="warning"></v-icon>
-              <span class="text-caption text-warning"> Pinned</span>
-            </div>
-          </v-card-text>
-        </v-card>
       </v-form>
     </v-card-text>
     
-    <v-card-actions class="pa-4">
+    <v-card-actions class="pa-4 border-top">
       <v-spacer></v-spacer>
-      <v-btn variant="text" @click="$emit('close')">Cancel</v-btn>
-      <v-btn color="primary" :loading="posting" @click="postAnnouncement" :disabled="!formValid">
-        <v-icon start icon="mdi-send"></v-icon>
-        Post Announcement
+      <v-btn variant="text" @click="$emit('close')" rounded="pill">Cancel</v-btn>
+      <v-btn color="primary" :loading="posting" @click="postAnnouncement" :disabled="!formValid" rounded="pill">
+        <v-icon start icon="mdi-send" size="16"></v-icon>
+        Post
       </v-btn>
     </v-card-actions>
   </v-card>
@@ -183,26 +146,9 @@ const priorityOptions = [
 ]
 
 const templates = [
-  {
-    title: 'Assignment Reminder',
-    content: 'This is a reminder that the assignment is due soon. Please make sure to submit your work before the deadline. Late submissions will be penalized as per the course policy.'
-  },
-  {
-    title: 'Class Cancellation',
-    content: 'Due to unforeseen circumstances, today\'s class is cancelled. Please check the course materials for self-study resources. The next class will proceed as scheduled.'
-  },
-  {
-    title: 'Exam Schedule',
-    content: 'The upcoming exam has been scheduled. Please review the syllabus for topics covered. Make sure to prepare thoroughly and reach out if you have any questions.'
-  },
-  {
-    title: 'Holiday Greetings',
-    content: 'Wishing all students a happy holiday season! Enjoy your break and stay safe. Classes will resume on the scheduled date.'
-  },
-  {
-    title: 'Important Update',
-    content: 'Please be advised of an important update regarding the course. Check the materials section for additional resources and updated guidelines.'
-  }
+  { title: 'Assignment Reminder', content: 'Reminder: The assignment is due soon. Please submit your work before the deadline.' },
+  { title: 'Class Update', content: 'Please check the course materials for new resources and announcements.' },
+  { title: 'Exam Schedule', content: 'The upcoming exam has been scheduled. Please review the syllabus for details.' }
 ]
 
 const courseOptions = computed(() => {
@@ -212,34 +158,13 @@ const courseOptions = computed(() => {
   }))
 })
 
-const getPriorityColor = (priority) => {
-  const colors = {
-    low: 'info',
-    normal: 'primary',
-    high: 'warning',
-    urgent: 'error'
-  }
-  return colors[priority] || 'primary'
-}
-
-const truncateText = (text, length) => {
-  if (!text) return ''
-  return text.length > length ? text.substring(0, length) + '...' : text
-}
-
 const applyTemplate = (template) => {
   formData.value.title = template.title
   formData.value.content = template.content
 }
 
-const useTemplate = () => {
-  // This will open a dialog to select template
-  // For now, just show snackbar
-  snackbar.value = { 
-    show: true, 
-    text: 'Click on any template to apply', 
-    color: 'info' 
-  }
+const showTemplateHint = () => {
+  snackbar.value = { show: true, text: 'Click on any template to apply', color: 'info' }
 }
 
 const postAnnouncement = async () => {
@@ -247,29 +172,25 @@ const postAnnouncement = async () => {
   
   posting.value = true
   try {
-    await teacherService.postAnnouncement(formData.value.courseId, {
+    const submitData = {
       title: formData.value.title,
       content: formData.value.content,
       priority: formData.value.priority,
-      isPinned: formData.value.isPinned,
-      expiresAt: formData.value.expiresAt ? new Date(formData.value.expiresAt).toISOString() : null
-    })
-    
-    snackbar.value = { 
-      show: true, 
-      text: 'Announcement posted successfully!', 
-      color: 'success' 
+      isPinned: formData.value.isPinned
     }
     
+    if (formData.value.expiresAt) {
+      submitData.expiresAt = new Date(formData.value.expiresAt).toISOString()
+    }
+    
+    await teacherService.postAnnouncement(formData.value.courseId, submitData)
+    
+    snackbar.value = { show: true, text: 'Announcement posted!', color: 'success' }
     emit('posted')
     emit('close')
   } catch (error) {
     console.error('Failed to post announcement:', error)
-    snackbar.value = { 
-      show: true, 
-      text: error.response?.data?.message || 'Failed to post announcement', 
-      color: 'error' 
-    }
+    snackbar.value = { show: true, text: error.response?.data?.message || 'Failed to post', color: 'error' }
   } finally {
     posting.value = false
   }
@@ -281,3 +202,13 @@ onMounted(() => {
   }
 })
 </script>
+
+<style scoped>
+.border-bottom {
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.border-top {
+  border-top: 1px solid #E2E8F0;
+}
+</style>

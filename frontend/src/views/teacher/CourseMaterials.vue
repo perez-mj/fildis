@@ -1,111 +1,89 @@
 <!-- frontend/src/views/teacher/CourseMaterials.vue -->
 <template>
   <div class="course-materials">
-    <v-container fluid>
-      <!-- Header -->
-      <v-row>
-        <v-col cols="12">
-          <v-card class="mb-4" color="primary" variant="tonal">
-            <v-card-text class="pa-4">
-              <div class="d-flex align-center justify-space-between flex-wrap">
-                <div class="d-flex align-center">
-                  <v-btn
-                    icon="mdi-arrow-left"
-                    variant="text"
-                    to="/teacher/courses"
-                    class="mr-3"
-                  ></v-btn>
-                  <div>
-                    <div class="text-overline">Course Materials</div>
-                    <h1 class="text-h4">{{ course?.courseName }}</h1>
-                    <div class="text-subtitle-1">{{ course?.courseCode }}</div>
-                  </div>
-                </div>
-                <v-btn color="primary" @click="showUploadDialog = true" class="mt-2 mt-sm-0">
-                  <v-icon start icon="mdi-upload"></v-icon>
-                  Upload Material
-                </v-btn>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
+    <v-container fluid class="pa-4 pa-sm-6">
+      <!-- Header with accent underline -->
+      <div class="d-flex align-center justify-space-between flex-wrap mb-6">
+        <div class="d-flex align-center">
+          <v-btn
+            icon="mdi-arrow-left"
+            variant="text"
+            to="/teacher/courses"
+            class="mr-3"
+            color="primary"
+          ></v-btn>
+          <div>
+            <div class="text-overline text-grey-darken-1">Course Materials</div>
+            <h1 class="text-h4 font-weight-light mb-2">{{ course?.courseName }}</h1>
+            <div class="section-underline"></div>
+            <div class="text-subtitle-1 text-grey-darken-1 mt-2">{{ course?.courseCode }}</div>
+          </div>
+        </div>
+        <v-btn color="primary" @click="showUploadDialog = true" rounded="pill" class="mt-3 mt-sm-0">
+          <v-icon start icon="mdi-upload"></v-icon>
+          Upload Material
+        </v-btn>
+      </div>
 
-      <!-- Tabs -->
-      <v-row>
-        <v-col cols="12">
-          <v-tabs v-model="activeTab" color="primary" align-tabs="start" show-arrows>
-            <v-tab value="all">
-              <v-icon start icon="mdi-folder"></v-icon>
-              All Materials
-              <v-badge :content="materials.length" color="primary" inline class="ml-2"></v-badge>
-            </v-tab>
-            <v-tab value="pdf">
-              <v-icon start icon="mdi-file-pdf-box"></v-icon>
-              PDFs
-            </v-tab>
-            <v-tab value="ppt">
-              <v-icon start icon="mdi-file-powerpoint-box"></v-icon>
-              Presentations
-            </v-tab>
-            <v-tab value="video">
-              <v-icon start icon="mdi-video-box"></v-icon>
-              Videos
-            </v-tab>
-            <v-tab value="image">
-              <v-icon start icon="mdi-image-box"></v-icon>
-              Images
-            </v-tab>
-            <v-tab value="other">
-              <v-icon start icon="mdi-file-box"></v-icon>
-              Other
-            </v-tab>
-          </v-tabs>
-        </v-col>
-      </v-row>
+      <!-- Tabs - Minimalist -->
+      <v-tabs v-model="activeTab" color="primary" align-tabs="start" show-arrows class="calm-tabs mb-4">
+        <v-tab value="all" rounded="pill">
+          <v-icon start icon="mdi-folder" size="18"></v-icon>
+          All
+          <v-badge :content="materials.length" color="primary" inline class="ml-2" bordered></v-badge>
+        </v-tab>
+        <v-tab value="pdf" rounded="pill">
+          <v-icon start icon="mdi-file-pdf-box" size="18"></v-icon>
+          PDFs
+        </v-tab>
+        <v-tab value="ppt" rounded="pill">
+          <v-icon start icon="mdi-file-powerpoint-box" size="18"></v-icon>
+          Presentations
+        </v-tab>
+        <v-tab value="video" rounded="pill">
+          <v-icon start icon="mdi-video-box" size="18"></v-icon>
+          Videos
+        </v-tab>
+        <v-tab value="image" rounded="pill">
+          <v-icon start icon="mdi-image-box" size="18"></v-icon>
+          Images
+        </v-tab>
+      </v-tabs>
 
       <!-- Materials Grid -->
-      <v-row class="mt-4">
+      <v-row>
         <v-col v-for="material in filteredMaterials" :key="material._id" cols="12" sm="6" md="4" lg="3">
-          <v-card :loading="loading" hover class="material-card" elevation="2">
+          <v-card variant="outlined" class="material-card" :loading="loading">
             <div class="material-preview" :class="`preview-${material.fileType}`">
-              <v-icon :icon="getFileTypeIcon(material.fileType)" size="48" class="preview-icon"></v-icon>
+              <v-icon :icon="getFileTypeIcon(material.fileType)" size="40" class="preview-icon"></v-icon>
             </div>
 
-            <v-card-item>
-              <v-card-title class="text-subtitle-1 font-weight-medium">{{ truncateText(material.title, 40) }}</v-card-title>
-              <v-card-subtitle class="text-caption">
+            <v-card-item class="pa-3">
+              <v-card-title class="text-subtitle-1 font-weight-medium pa-0">{{ truncateText(material.title, 40) }}</v-card-title>
+              <v-card-subtitle class="text-caption pa-0 mt-1">
                 {{ formatFileSize(material.fileSize) }} • {{ formatDate(material.createdAt) }}
               </v-card-subtitle>
             </v-card-item>
 
-            <v-card-text class="pt-0">
-              <p v-if="material.description" class="text-caption text-medium-emphasis">
+            <v-card-text class="pt-0 px-3 pb-0">
+              <p v-if="material.description" class="text-caption text-grey-darken-1 mb-2">
                 {{ truncateText(material.description, 60) }}
               </p>
-              <v-chip-group v-if="material.tags?.length" class="mt-1">
-                <v-chip v-for="tag in material.tags.slice(0, 3)" :key="tag" size="x-small" color="info" variant="outlined">
-                  {{ tag }}
-                </v-chip>
-                <v-chip v-if="material.tags.length > 3" size="x-small" color="info" variant="outlined">
-                  +{{ material.tags.length - 3 }}
-                </v-chip>
-              </v-chip-group>
-              <div class="mt-2 d-flex align-center">
-                <v-icon icon="mdi-eye" size="small" class="me-1"></v-icon>
-                <span class="text-caption">{{ material.views || 0 }} views</span>
-                <v-icon icon="mdi-download" size="small" class="ms-2 me-1"></v-icon>
-                <span class="text-caption">{{ material.downloads || 0 }} downloads</span>
+              <div class="d-flex align-center text-caption text-grey-darken-1">
+                <v-icon icon="mdi-eye" size="14" class="me-1"></v-icon>
+                <span>{{ material.views || 0 }}</span>
+                <v-icon icon="mdi-download" size="14" class="ms-3 me-1"></v-icon>
+                <span>{{ material.downloads || 0 }}</span>
               </div>
             </v-card-text>
 
             <v-divider></v-divider>
 
-            <v-card-actions>
-              <v-btn size="small" color="primary" variant="text" :href="material.webViewLink" target="_blank" prepend-icon="mdi-eye">
+            <v-card-actions class="pa-2">
+              <v-btn size="small" color="primary" variant="text" :href="material.webViewLink" target="_blank" prepend-icon="mdi-eye" rounded="pill">
                 View
               </v-btn>
-              <v-btn size="small" color="success" variant="text" :href="material.webContentLink" download prepend-icon="mdi-download">
+              <v-btn size="small" color="success" variant="text" :href="material.webContentLink" download prepend-icon="mdi-download" rounded="pill">
                 Download
               </v-btn>
               <v-spacer></v-spacer>
@@ -114,31 +92,34 @@
           </v-card>
         </v-col>
 
+        <!-- Empty State -->
         <v-col v-if="filteredMaterials.length === 0 && !loading" cols="12">
-          <v-empty-state
-            headline="No Materials"
-            :title="activeTab !== 'all' ? `No ${activeTab} materials found` : 'No materials uploaded yet'"
-            :text="activeTab !== 'all' ? 'Try a different category' : 'Click the Upload button to add course materials.'"
-          >
-            <template v-slot:actions>
-              <v-btn color="primary" @click="showUploadDialog = true" prepend-icon="mdi-upload">
-                Upload Material
-              </v-btn>
-            </template>
-          </v-empty-state>
+          <v-card variant="outlined" class="text-center pa-8">
+            <v-icon icon="mdi-folder-open" size="64" color="grey-lighten-1" class="mb-3" opacity="0.5"></v-icon>
+            <div class="text-h6 font-weight-light text-grey-darken-1">
+              {{ activeTab !== 'all' ? `No ${activeTab} materials yet` : 'No course materials' }}
+            </div>
+            <div class="text-caption text-grey-darken-1 mt-1">
+              {{ activeTab !== 'all' ? 'Try a different category' : 'Click the upload button to add materials' }}
+            </div>
+            <v-btn color="primary" variant="outlined" @click="showUploadDialog = true" class="mt-4" rounded="pill">
+              Upload Material
+            </v-btn>
+          </v-card>
         </v-col>
       </v-row>
     </v-container>
 
-    <!-- Upload Dialog -->
-    <v-dialog v-model="showUploadDialog" max-width="600px" persistent>
-      <v-card>
-        <v-card-title class="text-h5 pa-4 bg-primary">
-          <span class="text-white">Upload Course Material</span>
-          <v-spacer></v-spacer>
-          <v-btn icon="mdi-close" variant="text" @click="showUploadDialog = false" color="white"></v-btn>
+    <!-- Upload Dialog - Minimalist -->
+    <v-dialog v-model="showUploadDialog" max-width="600px" scrollable>
+      <v-card variant="outlined">
+        <v-card-title class="pa-4 d-flex align-center justify-space-between">
+          <span class="text-h6 font-weight-light">Upload Course Material</span>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="closeUploadDialog"></v-btn>
         </v-card-title>
         
+        <v-divider></v-divider>
+
         <v-card-text class="pa-4">
           <v-form ref="uploadForm" v-model="formValid">
             <v-text-field
@@ -175,10 +156,9 @@
               required
             ></v-file-input>
             
-            <v-alert type="info" variant="tonal" class="mt-2">
+            <v-alert type="info" variant="tonal" class="mt-2" density="compact">
               <div class="text-caption">
-                <strong>Supported file types:</strong> PDF, PPT, PPTX, DOC, DOCX, MP4, MOV, AVI, JPG, PNG<br>
-                <strong>Max file size:</strong> 50MB
+                <strong>Supported:</strong> PDF, PPT, DOC, MP4, JPG, PNG • <strong>Max:</strong> 50MB
               </div>
             </v-alert>
           </v-form>
@@ -186,8 +166,8 @@
         
         <v-card-actions class="pa-4">
           <v-spacer></v-spacer>
-          <v-btn variant="text" @click="showUploadDialog = false">Cancel</v-btn>
-          <v-btn color="primary" :loading="uploading" @click="uploadMaterial" :disabled="!formValid">
+          <v-btn variant="text" @click="closeUploadDialog" rounded="pill">Cancel</v-btn>
+          <v-btn color="primary" :loading="uploading" @click="uploadMaterial" :disabled="!formValid" rounded="pill">
             Upload
           </v-btn>
         </v-card-actions>
@@ -196,17 +176,17 @@
 
     <!-- Delete Confirmation Dialog -->
     <v-dialog v-model="showDeleteDialog" max-width="400px">
-      <v-card>
-        <v-card-title class="text-h5">Delete Material</v-card-title>
-        <v-card-text>
-          Are you sure you want to delete "{{ materialToDelete?.title }}"?
-          <br>
-          <span class="text-error">This action cannot be undone.</span>
+      <v-card variant="outlined">
+        <v-card-title class="text-h6 font-weight-light pa-4">Delete Material</v-card-title>
+        <v-divider></v-divider>
+        <v-card-text class="pa-4">
+          Are you sure you want to delete <strong>"{{ materialToDelete?.title }}"</strong>?
+          <div class="text-error text-caption mt-2">This action cannot be undone.</div>
         </v-card-text>
-        <v-card-actions>
+        <v-card-actions class="pa-4">
           <v-spacer></v-spacer>
-          <v-btn variant="text" @click="showDeleteDialog = false">Cancel</v-btn>
-          <v-btn color="error" :loading="deleting" @click="deleteMaterial">Delete</v-btn>
+          <v-btn variant="text" @click="showDeleteDialog = false" rounded="pill">Cancel</v-btn>
+          <v-btn color="error" :loading="deleting" @click="deleteMaterial" rounded="pill">Delete</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -215,11 +195,14 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useTeacherStore } from '@/stores/teacherStore'
+import { inject } from 'vue'
 
 const route = useRoute()
+const router = useRouter()
 const teacherStore = useTeacherStore()
+const snackbar = inject('snackbar')
 
 const loading = ref(false)
 const uploading = ref(false)
@@ -256,7 +239,6 @@ const getFileTypeIcon = (type) => {
     docx: 'mdi-file-word-box',
     video: 'mdi-video-box',
     image: 'mdi-image-box',
-    link: 'mdi-link-box',
     other: 'mdi-file-box'
   }
   return icons[type] || 'mdi-file-box'
@@ -293,7 +275,6 @@ const loadCourse = async () => {
   if (course) {
     teacherStore.setCurrentCourse(course)
   } else if (courseId) {
-    // Course not found, go back
     router.push('/teacher/courses')
   }
 }
@@ -311,14 +292,15 @@ const uploadMaterial = async () => {
     
     await teacherStore.uploadMaterial(route.params.courseId, formData)
     
-    showUploadDialog.value = false
-    uploadData.value = { title: '', description: '', tags: '', file: null }
+    closeUploadDialog()
     
-    // Refresh course data
     await teacherStore.fetchMyCourses()
     await loadCourse()
+    
+    snackbar.value = { show: true, text: 'Material uploaded successfully!', color: 'success' }
   } catch (error) {
     console.error('Upload failed:', error)
+    snackbar.value = { show: true, text: 'Upload failed', color: 'error' }
   } finally {
     uploading.value = false
   }
@@ -335,11 +317,18 @@ const deleteMaterial = async () => {
     await teacherStore.deleteMaterial(materialToDelete.value._id)
     showDeleteDialog.value = false
     materialToDelete.value = null
+    snackbar.value = { show: true, text: 'Material deleted', color: 'success' }
   } catch (error) {
     console.error('Delete failed:', error)
+    snackbar.value = { show: true, text: 'Delete failed', color: 'error' }
   } finally {
     deleting.value = false
   }
+}
+
+const closeUploadDialog = () => {
+  showUploadDialog.value = false
+  uploadData.value = { title: '', description: '', tags: '', file: null }
 }
 
 onMounted(async () => {
@@ -355,45 +344,58 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.section-underline {
+  width: 60px;
+  height: 3px;
+  background-color: rgb(var(--v-theme-primary));
+  transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.section-underline:hover {
+  width: 64px;
+}
+
 .material-card {
-  transition: all 0.3s ease;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 
 .material-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
 }
 
 .material-preview {
-  height: 140px;
+  height: 120px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 4px 4px 0 0;
+  background: linear-gradient(135deg, #6366F1 0%, #818CF8 100%);
 }
 
 .preview-pdf {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: linear-gradient(135deg, #EF4444 0%, #F87171 100%);
 }
 
 .preview-ppt, .preview-pptx {
-  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
 }
 
 .preview-video {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
 }
 
 .preview-image {
-  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
 }
 
 .preview-icon {
   color: white;
   opacity: 0.9;
+}
+
+.calm-tabs :deep(.v-tab) {
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 500;
 }
 </style>

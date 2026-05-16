@@ -644,6 +644,14 @@ onMounted(() => {
   line-height: 1.3;
 }
 
+.header-accent {
+  width: 60px;
+  height: 3px;
+  background: rgb(var(--v-theme-primary));
+  border-radius: 3px;
+  margin-top: 8px;
+}
+
 /* Empty State */
 .empty-state {
   text-align: center;

@@ -1,94 +1,82 @@
 <!-- frontend/src/views/teacher/GradeSubmission.vue -->
 <template>
   <div class="grade-submission">
-    <v-container fluid>
+    <v-container fluid class="pa-4 pa-sm-6">
       <!-- Header -->
-      <v-row>
-        <v-col cols="12">
-          <v-card class="mb-4" color="primary" variant="tonal">
-            <v-card-text class="pa-4">
-              <div class="d-flex align-center">
-                <v-btn
-                  icon="mdi-arrow-left"
-                  variant="text"
-                  @click="$router.back()"
-                  class="mr-3"
-                ></v-btn>
-                <div>
-                  <div class="text-overline">Grade Submission</div>
-                  <h1 class="text-h4">{{ submission?.assignmentId?.title || 'Loading...' }}</h1>
-                  <div class="text-subtitle-1">
-                    Student: {{ submission?.studentId?.firstName }} {{ submission?.studentId?.lastName }}
-                  </div>
-                </div>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
+      <div class="mb-6">
+        <div class="d-flex align-center">
+          <v-btn
+            icon="mdi-arrow-left"
+            variant="text"
+            @click="$router.back()"
+            class="mr-3"
+            color="primary"
+          ></v-btn>
+          <div>
+            <div class="text-overline text-grey-darken-1">Grade Submission</div>
+            <h1 class="text-h4 font-weight-light mb-2">{{ submission?.assignmentId?.title || 'Loading...' }}</h1>
+            <div class="section-underline"></div>
+            <div class="text-subtitle-1 text-grey-darken-1 mt-2">
+              Student: {{ submission?.studentId?.firstName }} {{ submission?.studentId?.lastName }}
+            </div>
+          </div>
+        </div>
+      </div>
 
       <v-row>
         <!-- Submission Details -->
         <v-col cols="12" md="7">
-          <v-card :loading="loading">
-            <v-card-title class="text-h6 bg-grey-lighten-3 pa-3">
-              <v-icon start icon="mdi-file-document"></v-icon>
-              Submission Details
+          <v-card variant="outlined" :loading="loading">
+            <v-card-title class="pa-4 border-bottom">
+              <span class="text-subtitle-1 font-weight-medium">Submission Details</span>
             </v-card-title>
             
             <v-card-text class="pa-4">
-              <v-list>
-                <v-list-item>
-                  <template v-slot:prepend>
-                    <v-icon icon="mdi-calendar"></v-icon>
-                  </template>
-                  <v-list-item-title>Submitted On</v-list-item-title>
-                  <v-list-item-subtitle>{{ formatDateTime(submission?.submissionDate) }}</v-list-item-subtitle>
-                </v-list-item>
-                
-                <v-list-item>
-                  <template v-slot:prepend>
-                    <v-icon icon="mdi-clock"></v-icon>
-                  </template>
-                  <v-list-item-title>Status</v-list-item-title>
-                  <v-list-item-subtitle>
-                    <v-chip :color="submission?.isLate ? 'error' : 'success'" size="small">
-                      {{ submission?.isLate ? 'Late Submission' : 'On Time' }}
-                    </v-chip>
-                  </v-list-item-subtitle>
-                </v-list-item>
-                
-                <v-list-item v-if="submission?.comments">
-                  <template v-slot:prepend>
-                    <v-icon icon="mdi-comment"></v-icon>
-                  </template>
-                  <v-list-item-title>Student Comments</v-list-item-title>
-                  <v-list-item-subtitle>{{ submission.comments }}</v-list-item-subtitle>
-                </v-list-item>
-              </v-list>
+              <div class="info-row mb-3">
+                <v-icon icon="mdi-calendar" size="18" color="grey-darken-1" class="mr-2"></v-icon>
+                <span class="text-caption text-grey-darken-1">Submitted On:</span>
+                <span class="text-body-2 ml-2">{{ formatDateTime(submission?.submissionDate) }}</span>
+              </div>
+              
+              <div class="info-row mb-3">
+                <v-icon icon="mdi-clock" size="18" color="grey-darken-1" class="mr-2"></v-icon>
+                <span class="text-caption text-grey-darken-1">Status:</span>
+                <v-chip :color="submission?.isLate ? 'error' : 'success'" size="x-small" variant="tonal" class="ml-2">
+                  {{ submission?.isLate ? 'Late Submission' : 'On Time' }}
+                </v-chip>
+              </div>
+              
+              <div v-if="submission?.comments" class="info-row mb-4">
+                <v-icon icon="mdi-comment" size="18" color="grey-darken-1" class="mr-2"></v-icon>
+                <span class="text-caption text-grey-darken-1">Student Comments:</span>
+                <div class="text-body-2 mt-1 ml-6">{{ submission.comments }}</div>
+              </div>
 
               <!-- Submitted Files -->
               <div class="mt-4">
-                <h3 class="text-subtitle-1 mb-2">Submitted Files</h3>
-                <v-list v-if="submission?.submittedFiles?.length">
-                  <v-list-item v-for="(file, index) in submission.submittedFiles" :key="index">
+                <div class="text-subtitle-2 mb-2 d-flex align-center">
+                  <v-icon icon="mdi-paperclip" size="16" class="mr-1"></v-icon>
+                  Submitted Files
+                </div>
+                <v-list v-if="submission?.submittedFiles?.length" class="calm-list">
+                  <v-list-item v-for="(file, index) in submission.submittedFiles" :key="index" class="calm-list-item">
                     <template v-slot:prepend>
-                      <v-icon :icon="getFileIcon(file.fileType)"></v-icon>
+                      <v-icon :icon="getFileIcon(file.fileType)" color="primary" size="20"></v-icon>
                     </template>
-                    <v-list-item-title>{{ file.originalFileName }}</v-list-item-title>
-                    <v-list-item-subtitle>{{ formatFileSize(file.fileSize) }}</v-list-item-subtitle>
+                    <v-list-item-title class="text-body-2">{{ file.originalFileName }}</v-list-item-title>
+                    <v-list-item-subtitle class="text-caption">{{ formatFileSize(file.fileSize) }}</v-list-item-subtitle>
                     <template v-slot:append>
-                      <v-btn size="small" variant="text" color="primary" :href="file.webViewLink" target="_blank">
+                      <v-btn size="x-small" variant="text" color="primary" :href="file.webViewLink" target="_blank" rounded="pill">
                         View
                       </v-btn>
-                      <v-btn size="small" variant="text" color="success" :href="file.webContentLink" download>
+                      <v-btn size="x-small" variant="text" color="success" :href="file.webContentLink" download rounded="pill">
                         Download
                       </v-btn>
                     </template>
                   </v-list-item>
                 </v-list>
-                <v-alert v-else type="info" variant="tonal" class="mt-2">
-                  No files submitted for this assignment.
+                <v-alert v-else type="info" variant="tonal" density="compact" class="mt-2">
+                  <span class="text-caption">No files submitted for this assignment.</span>
                 </v-alert>
               </div>
             </v-card-text>
@@ -97,41 +85,45 @@
 
         <!-- Grading Form -->
         <v-col cols="12" md="5">
-          <v-card>
-            <v-card-title class="text-h6 bg-grey-lighten-3 pa-3">
-              <v-icon start icon="mdi-star"></v-icon>
-              Grade & Feedback
+          <v-card variant="outlined">
+            <v-card-title class="pa-4 border-bottom">
+              <span class="text-subtitle-1 font-weight-medium">Grade & Feedback</span>
             </v-card-title>
             
             <v-card-text class="pa-4">
               <v-form ref="gradeForm" v-model="formValid">
-                <v-text-field
-                  v-model="gradeData.score"
-                  label="Score"
-                  type="number"
-                  :rules="scoreRules"
-                  variant="outlined"
-                  :suffix="`/ ${submission?.assignmentId?.maxScore || 100}`"
-                  class="mb-4"
-                >
-                  <template v-slot:append>
+                <div class="mb-4">
+                  <label class="text-caption text-grey-darken-1 mb-1 d-block">Score</label>
+                  <div class="d-flex align-center gap-3">
+                    <v-text-field
+                      v-model="gradeData.score"
+                      type="number"
+                      :rules="scoreRules"
+                      variant="outlined"
+                      density="compact"
+                      hide-details="auto"
+                      :suffix="`/ ${submission?.assignmentId?.maxScore || 100}`"
+                      style="flex: 1"
+                    ></v-text-field>
                     <v-slider
                       v-model="gradeData.score"
                       :min="0"
                       :max="submission?.assignmentId?.maxScore || 100"
                       :step="1"
                       hide-details
-                      style="width: 150px"
-                      class="ml-2"
+                      style="flex: 2"
+                      color="primary"
+                      thumb-label="always"
+                      thumb-size="16"
                     ></v-slider>
-                  </template>
-                </v-text-field>
+                  </div>
+                </div>
 
                 <v-textarea
                   v-model="gradeData.feedback"
                   label="Feedback"
                   placeholder="Provide constructive feedback to the student..."
-                  rows="6"
+                  rows="5"
                   variant="outlined"
                   counter="500"
                   class="mb-4"
@@ -141,49 +133,52 @@
                   v-if="gradeData.score >= (submission?.assignmentId?.passingScore || 60)"
                   type="success"
                   variant="tonal"
-                  class="mb-4"
+                  density="compact"
+                  class="mb-2"
                 >
-                  <v-icon start icon="mdi-check-circle"></v-icon>
+                  <v-icon start icon="mdi-check-circle" size="16"></v-icon>
                   This submission is passing!
                 </v-alert>
                 <v-alert
                   v-else-if="gradeData.score > 0"
                   type="warning"
                   variant="tonal"
-                  class="mb-4"
+                  density="compact"
+                  class="mb-2"
                 >
-                  <v-icon start icon="mdi-alert"></v-icon>
-                  This submission is below the passing score.
+                  <v-icon start icon="mdi-alert" size="16"></v-icon>
+                  Below passing score.
                 </v-alert>
               </v-form>
             </v-card-text>
             
-            <v-card-actions class="pa-4">
+            <v-card-actions class="pa-4 border-top">
               <v-spacer></v-spacer>
-              <v-btn variant="text" @click="$router.back()">Cancel</v-btn>
-              <v-btn color="primary" :loading="saving" @click="submitGrade" :disabled="!formValid">
+              <v-btn variant="text" @click="$router.back()" rounded="pill">Cancel</v-btn>
+              <v-btn color="primary" :loading="saving" @click="submitGrade" :disabled="!formValid" rounded="pill">
                 Save Grade
               </v-btn>
             </v-card-actions>
           </v-card>
 
           <!-- Quick Feedback Templates -->
-          <v-card class="mt-4">
-            <v-card-title class="text-subtitle-2 pa-3">
-              <v-icon start icon="mdi-text-box"></v-icon>
-              Quick Feedback Templates
+          <v-card variant="outlined" class="mt-4">
+            <v-card-title class="text-subtitle-2 pa-3 border-bottom">
+              <v-icon start icon="mdi-text-box" size="16"></v-icon>
+              Quick Feedback
             </v-card-title>
             <v-card-text class="pa-3">
               <v-chip-group column>
                 <v-chip
                   v-for="template in feedbackTemplates"
                   :key="template"
-                  size="small"
-                  color="info"
+                  size="x-small"
+                  color="primary"
                   variant="outlined"
                   @click="gradeData.feedback = template"
+                  class="cursor-pointer"
                 >
-                  {{ template.substring(0, 40) }}...
+                  {{ truncateText(template, 35) }}
                 </v-chip>
               </v-chip-group>
             </v-card-text>
@@ -218,9 +213,9 @@ const gradeData = ref({
 })
 
 const scoreRules = computed(() => [
-  v => !!v || v === 0 || 'Score is required',
+  v => (!!v && v !== '') || v === 0 || 'Score is required',
   v => v >= 0 || 'Score must be at least 0',
-  v => v <= (submission.value?.assignmentId?.maxScore || 100) || `Score cannot exceed ${submission.value?.assignmentId?.maxScore}`
+  v => v <= (submission.value?.assignmentId?.maxScore || 100) || `Max score is ${submission.value?.assignmentId?.maxScore}`
 ])
 
 const feedbackTemplates = [
@@ -229,9 +224,8 @@ const feedbackTemplates = [
   "Please review the assignment instructions carefully. Some requirements were missed.",
   "Excellent work! You've demonstrated mastery of the topic.",
   "Satisfactory work. Keep up the good effort!",
-  "Please improve your submission by adding more details and examples.",
   "Well organized and clearly presented. Good job!",
-  "The submission is incomplete. Please review the requirements and resubmit."
+  "The submission is incomplete. Please review the requirements."
 ]
 
 const getFileIcon = (fileType) => {
@@ -250,9 +244,9 @@ const getFileIcon = (fileType) => {
 const formatDateTime = (date) => {
   if (!date) return 'N/A'
   return new Date(date).toLocaleString('en-US', {
+    timeZone: 'Asia/Manila',
     month: 'short',
     day: 'numeric',
-    year: 'numeric',
     hour: '2-digit',
     minute: '2-digit'
   })
@@ -264,6 +258,11 @@ const formatFileSize = (bytes) => {
   const sizes = ['B', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
+const truncateText = (text, length) => {
+  if (!text) return ''
+  return text.length > length ? text.substring(0, length) + '...' : text
 }
 
 const submitGrade = async () => {
@@ -283,7 +282,6 @@ const submitGrade = async () => {
       color: 'success' 
     }
     
-    // Go back after short delay
     setTimeout(() => {
       router.back()
     }, 1500)
@@ -303,23 +301,16 @@ const loadSubmission = async () => {
   const submissionId = route.params.submissionId
   
   if (!submissionId) {
-    console.error('No submission ID provided')
-    snackbar.value = { 
-      show: true, 
-      text: 'Invalid submission ID', 
-      color: 'error' 
-    }
+    snackbar.value = { show: true, text: 'Invalid submission ID', color: 'error' }
     return
   }
   
   loading.value = true
   try {
-    // First, get all courses to find which assignment this submission belongs to
     if (teacherStore.courses.length === 0) {
       await teacherStore.fetchMyCourses()
     }
     
-    // Get all assignments from all courses
     let allSubmissions = []
     for (const course of teacherStore.courses) {
       if (course.assignments?.length) {
@@ -334,14 +325,12 @@ const loadSubmission = async () => {
       }
     }
     
-    // Find the specific submission
     submission.value = allSubmissions.find(s => s._id === submissionId)
     
     if (!submission.value) {
       throw new Error('Submission not found')
     }
     
-    // Populate grade data if already graded
     if (submission.value.grade) {
       gradeData.value.score = submission.value.grade.score
       gradeData.value.feedback = submission.value.grade.feedback || ''
@@ -364,7 +353,46 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.v-list-item {
-  min-height: 60px;
+.section-underline {
+  width: 60px;
+  height: 3px;
+  background-color: rgb(var(--v-theme-primary));
+  transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.section-underline:hover {
+  width: 64px;
+}
+
+.border-bottom {
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.border-top {
+  border-top: 1px solid #E2E8F0;
+}
+
+.info-row {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.calm-list {
+  background: transparent;
+}
+
+.calm-list-item {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 12px;
+}
+
+.calm-list-item:hover {
+  transform: translateX(4px);
+  background-color: rgba(99, 102, 241, 0.04);
+}
+
+.cursor-pointer {
+  cursor: pointer;
 }
 </style>

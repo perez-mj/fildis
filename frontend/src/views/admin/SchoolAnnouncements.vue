@@ -1,142 +1,144 @@
 <!-- frontend/src/views/admin/SchoolAnnouncements.vue -->
- <template>
-  <v-container fluid>
-    <v-row>
-      <v-col cols="12">
-        <div class="d-flex justify-space-between align-center mb-6">
-          <div>
-            <h1 class="text-h4 font-weight-bold">School Announcements</h1>
-            <div class="text-subtitle-1 text-grey mt-1">
-              Manage school-wide announcements for all users
-            </div>
-          </div>
-          <v-btn color="primary" size="large" @click="openCreateDialog">
-            <v-icon left>mdi-plus</v-icon>
-            Post Announcement
-          </v-btn>
+<template>
+  <div class="school-announcements">
+    <v-container fluid class="pa-4 pa-sm-6">
+      <!-- Header -->
+      <div class="d-flex align-center justify-space-between flex-wrap mb-6">
+        <div>
+          <h1 class="text-h4 font-weight-light mb-2">School Announcements</h1>
+          <div class="section-underline"></div>
         </div>
-      </v-col>
-    </v-row>
+        <v-btn color="primary" @click="openCreateDialog" rounded="pill" class="mt-3 mt-sm-0">
+          <v-icon start icon="mdi-plus" size="16"></v-icon>
+          Post Announcement
+        </v-btn>
+      </div>
 
-    <!-- Filters -->
-    <v-row>
-      <v-col cols="12">
-        <v-card elevation="2" class="mb-4">
-          <v-card-text class="pa-4">
-            <v-row>
-              <v-col cols="12" md="3">
-                <v-select
-                  v-model="filters.priority"
-                  label="Priority"
-                  clearable
-                  :items="priorityOptions"
-                >
-                  <template v-slot:selection="{ item }">
-                    <v-chip :color="getPriorityColor(item.value)" size="small">
-                      {{ item.title }}
-                    </v-chip>
-                  </template>
-                </v-select>
-              </v-col>
-              <v-col cols="12" md="3">
-                <v-select
-                  v-model="filters.targetAudience"
-                  label="Target Audience"
-                  clearable
-                  :items="audienceOptions"
-                ></v-select>
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="filters.search"
-                  label="Search announcements"
-                  prepend-inner-icon="mdi-magnify"
-                  clearable
-                ></v-text-field>
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+      <!-- Filters -->
+      <v-card variant="outlined" class="mb-4">
+        <v-card-text class="pa-4">
+          <v-row>
+            <v-col cols="12" md="3">
+              <v-select
+                v-model="filters.priority"
+                label="Priority"
+                clearable
+                :items="priorityOptions"
+                variant="outlined"
+                density="comfortable"
+              >
+                <template v-slot:selection="{ item }">
+                  <v-chip :color="getPriorityColor(item.value)" size="x-small" variant="tonal">
+                    {{ item.title }}
+                  </v-chip>
+                </template>
+              </v-select>
+            </v-col>
+            <v-col cols="12" md="3">
+              <v-select
+                v-model="filters.targetAudience"
+                label="Target Audience"
+                clearable
+                :items="audienceOptions"
+                variant="outlined"
+                density="comfortable"
+              ></v-select>
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="filters.search"
+                label="Search announcements"
+                prepend-inner-icon="mdi-magnify"
+                clearable
+                variant="outlined"
+                density="comfortable"
+              ></v-text-field>
+            </v-col>
+          </v-row>
+        </v-card-text>
+      </v-card>
 
-    <!-- Pinned Announcements -->
-    <v-row v-if="filteredPinnedAnnouncements.length > 0">
-      <v-col cols="12">
-        <h2 class="text-h5 font-weight-medium mb-3">
-          <v-icon color="warning" class="mr-2">mdi-pin</v-icon>
-          Pinned Announcements
-        </h2>
-      </v-col>
-      <v-col
-        v-for="announcement in filteredPinnedAnnouncements"
-        :key="announcement._id"
-        cols="12"
-      >
-        <announcement-card
-          :announcement="announcement"
-          @edit="editAnnouncement"
-          @delete="confirmDelete"
-          @toggle-pin="togglePin"
-        />
-      </v-col>
-    </v-row>
+      <!-- Pinned Announcements -->
+      <div v-if="filteredPinnedAnnouncements.length > 0" class="mb-4">
+        <div class="d-flex align-center mb-3">
+          <v-icon icon="mdi-pin" color="warning" size="18" class="mr-2"></v-icon>
+          <h2 class="text-subtitle-1 font-weight-light">Pinned Announcements</h2>
+        </div>
+        <v-row>
+          <v-col
+            v-for="announcement in filteredPinnedAnnouncements"
+            :key="announcement._id"
+            cols="12"
+          >
+            <AnnouncementCard
+              :announcement="announcement"
+              @edit="editAnnouncement"
+              @delete="confirmDelete"
+              @toggle-pin="togglePin"
+            />
+          </v-col>
+        </v-row>
+      </div>
 
-    <!-- Normal Announcements -->
-    <v-row class="mt-4">
-      <v-col cols="12">
-        <h2 class="text-h5 font-weight-medium mb-3">
-          All Announcements
-          <v-chip v-if="filteredNormalAnnouncements.length" class="ml-2">
+      <!-- Normal Announcements -->
+      <div>
+        <div class="d-flex align-center justify-space-between mb-3">
+          <h2 class="text-subtitle-1 font-weight-light">All Announcements</h2>
+          <v-chip v-if="filteredNormalAnnouncements.length" size="x-small" variant="tonal">
             {{ filteredNormalAnnouncements.length }} total
           </v-chip>
-        </h2>
-      </v-col>
-      <v-col
-        v-for="announcement in filteredNormalAnnouncements"
-        :key="announcement._id"
-        cols="12"
-      >
-        <announcement-card
-          :announcement="announcement"
-          @edit="editAnnouncement"
-          @delete="confirmDelete"
-          @toggle-pin="togglePin"
-        />
-      </v-col>
-      
-      <v-col v-if="filteredNormalAnnouncements.length === 0 && filteredPinnedAnnouncements.length === 0" cols="12">
-        <v-card class="text-center pa-8">
-          <v-icon size="64" color="grey-lighten-1">mdi-bullhorn</v-icon>
-          <div class="text-h6 text-grey mt-4">No announcements found</div>
-          <div class="text-body-2 text-grey">
-            {{ filters.search ? 'Try adjusting your search filters' : 'Click "Post Announcement" to create one' }}
-          </div>
-        </v-card>
-      </v-col>
-    </v-row>
+        </div>
+        <v-row>
+          <v-col
+            v-for="announcement in filteredNormalAnnouncements"
+            :key="announcement._id"
+            cols="12"
+          >
+            <AnnouncementCard
+              :announcement="announcement"
+              @edit="editAnnouncement"
+              @delete="confirmDelete"
+              @toggle-pin="togglePin"
+            />
+          </v-col>
+          
+          <v-col v-if="filteredNormalAnnouncements.length === 0 && filteredPinnedAnnouncements.length === 0" cols="12">
+            <v-card variant="outlined" class="text-center pa-8">
+              <v-icon icon="mdi-bullhorn" size="48" color="grey-lighten-1" class="mb-3" opacity="0.5"></v-icon>
+              <div class="text-h6 font-weight-light text-grey-darken-1">No announcements found</div>
+              <div class="text-caption text-grey-darken-1 mt-1">
+                {{ filters.search ? 'Try adjusting your search filters' : 'Click "Post Announcement" to create one' }}
+              </div>
+            </v-card>
+          </v-col>
+        </v-row>
+      </div>
+    </v-container>
 
     <!-- Announcement Form Dialog -->
-    <v-dialog v-model="dialog" max-width="800px" scrollable>
+    <v-dialog v-model="dialog" max-width="700px" scrollable>
       <v-card>
-        <v-card-title class="text-h5 bg-primary text-white pa-4">
-          {{ editingAnnouncement ? 'Edit Announcement' : 'Post New Announcement' }}
+        <v-card-title class="pa-4 d-flex align-center justify-space-between border-bottom">
+          <span class="text-h6 font-weight-light">{{ editingAnnouncement ? 'Edit Announcement' : 'Post Announcement' }}</span>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="dialog = false"></v-btn>
         </v-card-title>
         
-        <v-card-text class="pa-4">
+        <v-card-text class="pa-4" style="max-height: 65vh; overflow-y: auto;">
           <v-form ref="form" v-model="valid">
             <v-text-field
               v-model="formData.title"
               label="Title"
-              :rules="[v => !!v || 'Title is required']"
+              :rules="[v => !!v || 'Required']"
+              variant="outlined"
               required
             ></v-text-field>
             
             <v-textarea
               v-model="formData.content"
               label="Content"
-              rows="6"
-              :rules="[v => !!v || 'Content is required']"
+              rows="5"
+              :rules="[v => !!v || 'Required']"
+              variant="outlined"
               required
             ></v-textarea>
             
@@ -146,7 +148,8 @@
                   v-model="formData.targetAudience"
                   label="Target Audience"
                   :items="audienceOptions"
-                  :rules="[v => !!v || 'Target audience is required']"
+                  :rules="[v => !!v || 'Required']"
+                  variant="outlined"
                   required
                 ></v-select>
               </v-col>
@@ -156,17 +159,14 @@
                   v-model="formData.priority"
                   label="Priority"
                   :items="priorityOptions"
-                  :rules="[v => !!v || 'Priority is required']"
+                  :rules="[v => !!v || 'Required']"
+                  variant="outlined"
                   required
                 >
-                  <template v-slot:item="{ item, props }">
-                    <v-list-item v-bind="props">
-                      <template v-slot:prepend>
-                        <v-chip :color="getPriorityColor(item.value)" size="small">
-                          {{ item.title }}
-                        </v-chip>
-                      </template>
-                    </v-list-item>
+                  <template v-slot:selection="{ item }">
+                    <v-chip :color="getPriorityColor(item.value)" size="x-small" variant="tonal">
+                      {{ item.title }}
+                    </v-chip>
                   </template>
                 </v-select>
               </v-col>
@@ -177,8 +177,10 @@
                 <v-switch
                   v-model="formData.isPinned"
                   label="Pin this announcement"
-                  color="warning"
+                  color="primary"
+                  hide-details
                 ></v-switch>
+                <div class="text-caption text-grey-darken-1 mt-1">Pinned announcements appear at the top</div>
               </v-col>
               
               <v-col cols="12" md="6">
@@ -186,6 +188,7 @@
                   v-model="formData.isActive"
                   label="Active"
                   color="success"
+                  hide-details
                 ></v-switch>
               </v-col>
             </v-row>
@@ -195,14 +198,15 @@
               v-model="formData.expiresAt"
               label="Expires At"
               type="datetime-local"
+              variant="outlined"
             ></v-text-field>
           </v-form>
         </v-card-text>
         
-        <v-card-actions class="pa-4">
+        <v-card-actions class="pa-4 border-top">
           <v-spacer></v-spacer>
-          <v-btn variant="text" @click="dialog = false">Cancel</v-btn>
-          <v-btn color="primary" :loading="announcementStore.loading" @click="saveAnnouncement">
+          <v-btn variant="text" @click="dialog = false" rounded="pill">Cancel</v-btn>
+          <v-btn color="primary" :loading="announcementStore.loading" @click="saveAnnouncement" rounded="pill">
             {{ editingAnnouncement ? 'Update' : 'Post' }}
           </v-btn>
         </v-card-actions>
@@ -212,29 +216,29 @@
     <!-- Delete Confirmation Dialog -->
     <v-dialog v-model="deleteDialog" max-width="400px">
       <v-card>
-        <v-card-title class="text-h5">Confirm Delete</v-card-title>
-        <v-card-text>
-          Are you sure you want to delete "{{ deleteItem?.title }}"?
-          This action cannot be undone.
+        <v-card-title class="text-h6 font-weight-light pa-4 border-bottom">Delete Announcement</v-card-title>
+        <v-card-text class="pa-4">
+          Delete <strong>"{{ deleteItem?.title }}"</strong>?
+          <div class="text-error text-caption mt-2">This action cannot be undone.</div>
         </v-card-text>
-        <v-card-actions>
+        <v-card-actions class="pa-4 border-top">
           <v-spacer></v-spacer>
-          <v-btn variant="text" @click="deleteDialog = false">Cancel</v-btn>
-          <v-btn color="error" :loading="announcementStore.loading" @click="deleteAnnouncement">
-            Delete
-          </v-btn>
+          <v-btn variant="text" @click="deleteDialog = false" rounded="pill">Cancel</v-btn>
+          <v-btn color="error" :loading="announcementStore.loading" @click="deleteAnnouncement" rounded="pill">Delete</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
-  </v-container>
+  </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useAnnouncementStore } from '@/stores/announcementStore'
-import AnnouncementCard from '@/components/common/AnnouncementCard.vue'
+import AnnouncementCard from '@/components/admin/AnnouncementCard.vue'
+import { inject } from 'vue'
 
 const announcementStore = useAnnouncementStore()
+const snackbar = inject('snackbar')
 
 const dialog = ref(false)
 const deleteDialog = ref(false)
@@ -249,10 +253,10 @@ const filters = ref({
 })
 
 const priorityOptions = [
-  { title: 'Low', value: 'low', color: 'info' },
-  { title: 'Normal', value: 'normal', color: 'success' },
-  { title: 'High', value: 'high', color: 'warning' },
-  { title: 'Urgent', value: 'urgent', color: 'error' }
+  { title: 'Low', value: 'low' },
+  { title: 'Normal', value: 'normal' },
+  { title: 'High', value: 'high' },
+  { title: 'Urgent', value: 'urgent' }
 ]
 
 const audienceOptions = [
@@ -315,7 +319,7 @@ const filteredNormalAnnouncements = computed(() => {
 const getPriorityColor = (priority) => {
   const colors = {
     low: 'info',
-    normal: 'success',
+    normal: 'primary',
     high: 'warning',
     urgent: 'error'
   }
@@ -364,13 +368,16 @@ const saveAnnouncement = async () => {
   try {
     if (editingAnnouncement.value) {
       await announcementStore.updateAnnouncement(editingAnnouncement.value._id, formData.value)
+      snackbar.value = { show: true, text: 'Announcement updated!', color: 'success' }
     } else {
       await announcementStore.createAnnouncement(formData.value)
+      snackbar.value = { show: true, text: 'Announcement posted!', color: 'success' }
     }
     dialog.value = false
     await loadAnnouncements()
   } catch (error) {
     console.error('Failed to save announcement:', error)
+    snackbar.value = { show: true, text: 'Failed to save announcement', color: 'error' }
   }
 }
 
@@ -395,12 +402,13 @@ const deleteAnnouncement = async () => {
     await announcementStore.deleteAnnouncement(deleteItem.value._id)
     deleteDialog.value = false
     await loadAnnouncements()
+    snackbar.value = { show: true, text: 'Announcement deleted', color: 'success' }
   } catch (error) {
     console.error('Failed to delete announcement:', error)
+    snackbar.value = { show: true, text: 'Failed to delete announcement', color: 'error' }
   }
 }
 
-// Watch for filter changes
 watch([() => filters.value.priority, () => filters.value.targetAudience, () => filters.value.search], () => {
   // Filters are reactive via computed properties
 }, { deep: true })
@@ -409,3 +417,24 @@ onMounted(() => {
   loadAnnouncements()
 })
 </script>
+
+<style scoped>
+.section-underline {
+  width: 60px;
+  height: 3px;
+  background-color: rgb(var(--v-theme-primary));
+  transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.section-underline:hover {
+  width: 64px;
+}
+
+.border-bottom {
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.border-top {
+  border-top: 1px solid #E2E8F0;
+}
+</style>

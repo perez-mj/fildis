@@ -1,222 +1,239 @@
 <!-- frontend/src/views/admin/CourseEnrollment.vue -->
- <template>
-  <v-container fluid>
+<template>
+  <div class="course-enrollment">
+    <v-container fluid class="pa-4 pa-sm-6">
+      <!-- Header -->
+      <div class="mb-6">
+        <h1 class="text-h4 font-weight-light mb-2">Course Enrollment</h1>
+        <div class="section-underline"></div>
+      </div>
 
-    <v-row>
-      <!-- Select Course -->
-      <v-col cols="12" md="4">
-        <v-card elevation="2">
-          <v-card-title class="bg-primary text-white pa-4">
-            Select Course
-          </v-card-title>
-          <v-card-text class="pa-4">
-            <v-select
-              v-model="selectedCourseId"
-              :items="courses"
-              item-title="courseName"
-              item-value="_id"
-              label="Choose a course"
-              placeholder="Select a course"
-              return-object
-              clearable
-              @update:model-value="onCourseSelect"
-            >
-              <template v-slot:item="{ item, props }">
-                <v-list-item v-bind="props">
-                  <template v-slot:title>
-                    <div>
-                      <strong>{{ item.raw.courseCode }}</strong> - {{ item.raw.courseName }}
-                    </div>
-                  </template>
-                  <template v-slot:subtitle>
-                    Teacher: {{ item.raw.teacher?.firstName }} {{ item.raw.teacher?.lastName }}
-                  </template>
-                </v-list-item>
-              </template>
-              <template v-slot:selection="{ item }">
-                <div>
-                  <strong>{{ item.raw.courseCode }}</strong> - {{ item.raw.courseName }}
-                </div>
-              </template>
-            </v-select>
-          </v-card-text>
-        </v-card>
-      </v-col>
-
-      <!-- Course Info -->
-      <v-col cols="12" md="8" v-if="selectedCourse">
-        <v-card elevation="2">
-          <v-card-title class="bg-grey-lighten-3 pa-4">
-            <div class="d-flex justify-space-between align-center">
-              <div>
-                <span class="text-h5">{{ selectedCourse.courseName }}</span>
-                <v-chip class="ml-3" color="primary" size="small">{{ selectedCourse.courseCode }}</v-chip>
-              </div>
-              <v-chip :color="selectedCourse.isActive ? 'success' : 'error'">
-                {{ selectedCourse.isActive ? 'Active' : 'Inactive' }}
-              </v-chip>
-            </div>
-          </v-card-title>
-          <v-card-text class="pa-4">
-            <v-row>
-              <v-col cols="12" md="6">
-                <div class="text-subtitle-2 text-grey">Department</div>
-                <div class="text-body-1">{{ selectedCourse.department }}</div>
-              </v-col>
-              <v-col cols="12" md="6">
-                <div class="text-subtitle-2 text-grey">Teacher</div>
-                <div class="text-body-1">
-                  {{ selectedCourse.teacher?.firstName }} {{ selectedCourse.teacher?.lastName }}
-                </div>
-              </v-col>
-              <v-col cols="12" md="6">
-                <div class="text-subtitle-2 text-grey">Enrollment Status</div>
-                <div class="text-body-1">
-                  {{ selectedCourse.students?.length || 0 }} / {{ selectedCourse.maxStudents }} students
-                  <v-progress-linear
-                    :model-value="(selectedCourse.students?.length || 0) / selectedCourse.maxStudents * 100"
-                    :color="getProgressColor(selectedCourse.students?.length || 0, selectedCourse.maxStudents)"
-                    height="8"
-                    class="mt-2"
-                  ></v-progress-linear>
-                </div>
-              </v-col>
-              <v-col cols="12" md="6">
-                <div class="text-subtitle-2 text-grey">Schedule</div>
-                <div class="text-body-2">
-                  {{ formatDate(selectedCourse.startDate) }} to {{ formatDate(selectedCourse.endDate) }}
-                </div>
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-
-    <v-row v-if="selectedCourse" class="mt-4">
-      <!-- Enroll New Student -->
-      <v-col cols="12" md="5">
-        <v-card elevation="2">
-          <v-card-title class="bg-success text-white pa-4">
-            Enroll New Student
-          </v-card-title>
-          <v-card-text class="pa-4">
-            <v-select
-              v-model="selectedStudentId"
-              :items="availableStudents"
-              item-title="fullName"
-              item-value="_id"
-              label="Select Student"
-              placeholder="Choose a student to enroll"
-              return-object
-              :disabled="isCourseFull"
-            >
-              <template v-slot:item="{ item, props }">
-                <v-list-item v-bind="props">
-                  <template v-slot:title>
-                    {{ item.raw.firstName }} {{ item.raw.lastName }}
-                  </template>
-                  <template v-slot:subtitle>
-                    ID: {{ item.raw.studentId }} | {{ item.raw.email }}
-                  </template>
-                </v-list-item>
-              </template>
-            </v-select>
-            
-            <v-alert
-              v-if="isCourseFull"
-              type="warning"
-              variant="tonal"
-              class="mt-4"
-            >
-              This course has reached maximum capacity ({{ selectedCourse.maxStudents }} students)
-            </v-alert>
-
-            <v-btn
-              color="success"
-              block
-              class="mt-4"
-              :disabled="!selectedStudentId || isCourseFull"
-              :loading="enrolling"
-              @click="enrollStudent"
-            >
-              <v-icon left>mdi-account-plus</v-icon>
-              Enroll Student
-            </v-btn>
-          </v-card-text>
-        </v-card>
-      </v-col>
-
-      <!-- Enrolled Students List -->
-      <v-col cols="12" md="7">
-        <v-card elevation="2">
-          <v-card-title class="bg-info text-white pa-4">
-            Enrolled Students ({{ selectedCourse.students?.length || 0 }})
-          </v-card-title>
-          <v-card-text class="pa-0">
-            <v-list>
-              <v-list-item
-                v-for="student in enrolledStudents"
-                :key="student._id"
-                :title="`${student.firstName} ${student.lastName}`"
-                :subtitle="`ID: ${student.studentId} | ${student.email}`"
+      <v-row>
+        <!-- Select Course -->
+        <v-col cols="12" md="4">
+          <v-card variant="outlined">
+            <v-card-title class="pa-3 border-bottom">
+              <span class="text-subtitle-1 font-weight-light">Select Course</span>
+            </v-card-title>
+            <v-card-text class="pa-4">
+              <v-select
+                v-model="selectedCourseId"
+                :items="courses"
+                item-title="courseName"
+                item-value="_id"
+                label="Choose a course"
+                placeholder="Select a course"
+                clearable
+                variant="outlined"
+                @update:model-value="onCourseSelect"
               >
+                <template v-slot:item="{ item, props }">
+                  <v-list-item v-bind="props">
+                    <template v-slot:title>
+                      <div class="text-body-2 font-weight-medium">
+                        <strong>{{ item.raw.courseCode }}</strong> - {{ item.raw.courseName }}
+                      </div>
+                    </template>
+                    <template v-slot:subtitle>
+                      <span class="text-caption text-grey-darken-1">
+                        Teacher: {{ item.raw.teacher?.firstName }} {{ item.raw.teacher?.lastName }}
+                      </span>
+                    </template>
+                  </v-list-item>
+                </template>
+                <template v-slot:selection="{ item }">
+                  <div>
+                    <strong>{{ item.raw.courseCode }}</strong> - {{ item.raw.courseName }}
+                  </div>
+                </template>
+              </v-select>
+            </v-card-text>
+          </v-card>
+        </v-col>
+
+        <!-- Course Info -->
+        <v-col cols="12" md="8" v-if="selectedCourse">
+          <v-card variant="outlined">
+            <v-card-title class="pa-3 border-bottom">
+              <div class="d-flex justify-space-between align-center flex-wrap">
+                <div>
+                  <span class="text-subtitle-1 font-weight-light">{{ selectedCourse.courseName }}</span>
+                  <v-chip class="ml-2" color="primary" size="x-small" variant="tonal">
+                    {{ selectedCourse.courseCode }}
+                  </v-chip>
+                </div>
+                <v-chip :color="selectedCourse.isActive ? 'success' : 'grey'" size="x-small" variant="tonal">
+                  {{ selectedCourse.isActive ? 'Active' : 'Inactive' }}
+                </v-chip>
+              </div>
+            </v-card-title>
+            <v-card-text class="pa-4">
+              <v-row>
+                <v-col cols="12" md="6">
+                  <div class="text-caption text-grey-darken-1">Department</div>
+                  <div class="text-body-2">{{ selectedCourse.department || '—' }}</div>
+                </v-col>
+                <v-col cols="12" md="6">
+                  <div class="text-caption text-grey-darken-1">Teacher</div>
+                  <div class="text-body-2">
+                    {{ selectedCourse.teacher?.firstName }} {{ selectedCourse.teacher?.lastName || 'Not Assigned' }}
+                  </div>
+                </v-col>
+                <v-col cols="12">
+                  <div class="text-caption text-grey-darken-1">Enrollment Status</div>
+                  <div class="text-body-2 mb-2">
+                    {{ selectedCourse.students?.length || 0 }} / {{ selectedCourse.maxStudents || 50 }} students
+                  </div>
+                  <v-progress-linear
+                    :model-value="(selectedCourse.students?.length || 0) / (selectedCourse.maxStudents || 50) * 100"
+                    :color="getProgressColor((selectedCourse.students?.length || 0), (selectedCourse.maxStudents || 50))"
+                    height="3"
+                    rounded
+                  ></v-progress-linear>
+                </v-col>
+                <v-col cols="12" md="6">
+                  <div class="text-caption text-grey-darken-1">Schedule</div>
+                  <div class="text-body-2 text-grey-darken-1">
+                    {{ formatDate(selectedCourse.startDate) }} — {{ formatDate(selectedCourse.endDate) }}
+                  </div>
+                </v-col>
+              </v-row>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <v-row v-if="selectedCourse" class="mt-4">
+        <!-- Enroll New Student -->
+        <v-col cols="12" md="5">
+          <v-card variant="outlined">
+            <v-card-title class="pa-3 border-bottom">
+              <span class="text-subtitle-1 font-weight-light">Enroll New Student</span>
+            </v-card-title>
+            <v-card-text class="pa-4">
+              <v-select
+                v-model="selectedStudentId"
+                :items="availableStudents"
+                item-title="displayName"
+                item-value="_id"
+                label="Select Student"
+                placeholder="Choose a student to enroll"
+                variant="outlined"
+                :disabled="isCourseFull"
+                clearable
+              >
+                <template v-slot:item="{ item, props }">
+                  <v-list-item v-bind="props">
+                    <template v-slot:title>
+                      <span class="text-body-2">{{ item.raw.firstName }} {{ item.raw.lastName }}</span>
+                    </template>
+                    <template v-slot:subtitle>
+                      <span class="text-caption text-grey-darken-1">
+                        ID: {{ item.raw.studentId || 'N/A' }} • {{ item.raw.email }}
+                      </span>
+                    </template>
+                  </v-list-item>
+                </template>
+                <template v-slot:selection="{ item }">
+                  <span class="text-body-2">{{ item.raw.firstName }} {{ item.raw.lastName }}</span>
+                </template>
+              </v-select>
+              
+              <v-alert
+                v-if="isCourseFull"
+                type="warning"
+                variant="tonal"
+                density="compact"
+                class="mt-4"
+              >
+                <span class="text-caption">Course has reached max capacity ({{ selectedCourse.maxStudents }} students)</span>
+              </v-alert>
+
+              <v-btn
+                color="success"
+                block
+                class="mt-4"
+                :disabled="!selectedStudentId || isCourseFull"
+                :loading="enrolling"
+                @click="enrollStudent"
+                rounded="pill"
+              >
+                <v-icon start icon="mdi-account-plus" size="16"></v-icon>
+                Enroll Student
+              </v-btn>
+            </v-card-text>
+          </v-card>
+        </v-col>
+
+        <!-- Enrolled Students List -->
+        <v-col cols="12" md="7">
+          <v-card variant="outlined">
+            <v-card-title class="pa-3 border-bottom">
+              <span class="text-subtitle-1 font-weight-light">
+                Enrolled Students ({{ selectedCourse.students?.length || 0 }})
+              </span>
+            </v-card-title>
+            <v-list v-if="enrolledStudents.length" class="calm-list">
+              <v-list-item v-for="student in enrolledStudents" :key="student._id" class="calm-list-item">
                 <template v-slot:prepend>
-                  <v-avatar color="primary">
-                    <v-icon>mdi-account</v-icon>
+                  <v-avatar size="32" color="primary" variant="tonal">
+                    <v-icon icon="mdi-account" size="16"></v-icon>
                   </v-avatar>
                 </template>
+                <v-list-item-title class="text-body-2">
+                  {{ student.firstName }} {{ student.lastName }}
+                </v-list-item-title>
+                <v-list-item-subtitle class="text-caption text-grey-darken-1">
+                  ID: {{ student.studentId || 'N/A' }} • {{ student.email }}
+                </v-list-item-subtitle>
                 <template v-slot:append>
                   <v-btn
-                    icon
-                    size="small"
+                    icon="mdi-delete"
+                    size="x-small"
                     color="error"
                     variant="text"
                     @click="confirmRemove(student)"
-                  >
-                    <v-icon>mdi-delete</v-icon>
-                  </v-btn>
+                  ></v-btn>
                 </template>
               </v-list-item>
-              
-              <v-list-item v-if="enrolledStudents.length === 0">
-                <div class="text-center pa-4 text-grey">
-                  No students enrolled in this course yet
-                </div>
-              </v-list-item>
             </v-list>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+            <v-card-text v-else class="text-center pa-6">
+              <v-icon icon="mdi-account-group" size="32" color="grey-lighten-1" class="mb-2" opacity="0.5"></v-icon>
+              <div class="text-caption text-grey-darken-1">No students enrolled yet</div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-container>
 
     <!-- Remove Student Dialog -->
     <v-dialog v-model="removeDialog" max-width="400px">
-      <v-card>
-        <v-card-title class="text-h5">Confirm Remove Student</v-card-title>
-        <v-card-text>
-          Are you sure you want to remove {{ studentToRemove?.firstName }} {{ studentToRemove?.lastName }} 
-          from {{ selectedCourse?.courseName }}?
+      <v-card variant="outlined">
+        <v-card-title class="text-h6 font-weight-light pa-4 border-bottom">Remove Student</v-card-title>
+        <v-card-text class="pa-4">
+          Remove <strong>{{ studentToRemove?.firstName }} {{ studentToRemove?.lastName }}</strong> from 
+          <strong>{{ selectedCourse?.courseName }}</strong>?
+          <div class="text-error text-caption mt-2">This action cannot be undone.</div>
         </v-card-text>
-        <v-card-actions>
+        <v-card-actions class="pa-4 border-top">
           <v-spacer></v-spacer>
-          <v-btn variant="text" @click="removeDialog = false">Cancel</v-btn>
-          <v-btn color="error" :loading="removing" @click="removeStudent">
-            Remove
-          </v-btn>
+          <v-btn variant="text" @click="removeDialog = false" rounded="pill">Cancel</v-btn>
+          <v-btn color="error" :loading="removing" @click="removeStudent" rounded="pill">Remove</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
-  </v-container>
+  </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useCourseStore } from '@/stores/courseStore'
 import { useUserStore } from '@/stores/userStore'
+import { inject } from 'vue'
 
 const courseStore = useCourseStore()
 const userStore = useUserStore()
+const snackbar = inject('snackbar')
 
 const courses = ref([])
 const selectedCourseId = ref(null)
@@ -228,16 +245,23 @@ const removing = ref(false)
 const removeDialog = ref(false)
 const studentToRemove = ref(null)
 
+// Transform students to have displayName for the select
 const availableStudents = computed(() => {
   if (!selectedCourse.value) return userStore.students
   
   const enrolledIds = selectedCourse.value.students?.map(s => s._id) || []
-  return userStore.students.filter(s => !enrolledIds.includes(s._id))
+  const available = userStore.students.filter(s => !enrolledIds.includes(s._id))
+  
+  // Add displayName property for the select's item-title
+  return available.map(student => ({
+    ...student,
+    displayName: `${student.firstName} ${student.lastName}`
+  }))
 })
 
 const isCourseFull = computed(() => {
   if (!selectedCourse.value) return false
-  return (selectedCourse.value.students?.length || 0) >= selectedCourse.value.maxStudents
+  return (selectedCourse.value.students?.length || 0) >= (selectedCourse.value.maxStudents || 50)
 })
 
 const getProgressColor = (current, max) => {
@@ -248,8 +272,8 @@ const getProgressColor = (current, max) => {
 }
 
 const formatDate = (date) => {
-  if (!date) return ''
-  return new Date(date).toLocaleDateString()
+  if (!date) return '—'
+  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 const loadCourses = async () => {
@@ -269,20 +293,23 @@ const loadStudents = async () => {
   }
 }
 
-const onCourseSelect = async (course) => {
-  if (!course) {
+const onCourseSelect = async (courseId) => {
+  if (!courseId) {
     selectedCourse.value = null
     selectedStudentId.value = null
     enrolledStudents.value = []
     return
   }
   
+  // Find the course by ID
+  const course = courses.value.find(c => c._id === courseId)
+  if (!course) return
+  
   selectedCourse.value = course
   selectedStudentId.value = null
   
-  // Fetch fresh course data to get populated students
   await courseStore.fetchCourse(course._id)
-  selectedCourse.value = courseStore.currentCourse
+  selectedCourse.value = courseStore.currentCourse || course
   enrolledStudents.value = selectedCourse.value?.students || []
 }
 
@@ -291,19 +318,20 @@ const enrollStudent = async () => {
   
   enrolling.value = true
   try {
-    await courseStore.enrollStudent(selectedCourse.value._id, selectedStudentId.value._id)
+    await courseStore.enrollStudent(selectedCourse.value._id, selectedStudentId.value)
     
-    // Refresh course data
     await courseStore.fetchCourse(selectedCourse.value._id)
     selectedCourse.value = courseStore.currentCourse
     enrolledStudents.value = selectedCourse.value?.students || []
     selectedStudentId.value = null
     
-    // Refresh courses list
     await courseStore.fetchCourses()
     courses.value = courseStore.courses
+    
+    snackbar.value = { show: true, text: 'Student enrolled successfully!', color: 'success' }
   } catch (error) {
     console.error('Failed to enroll student:', error)
+    snackbar.value = { show: true, text: 'Failed to enroll student', color: 'error' }
   } finally {
     enrolling.value = false
   }
@@ -321,19 +349,20 @@ const removeStudent = async () => {
   try {
     await courseStore.removeStudent(selectedCourse.value._id, studentToRemove.value._id)
     
-    // Refresh course data
     await courseStore.fetchCourse(selectedCourse.value._id)
     selectedCourse.value = courseStore.currentCourse
     enrolledStudents.value = selectedCourse.value?.students || []
     
-    // Refresh courses list
     await courseStore.fetchCourses()
     courses.value = courseStore.courses
     
     removeDialog.value = false
     studentToRemove.value = null
+    
+    snackbar.value = { show: true, text: 'Student removed successfully!', color: 'success' }
   } catch (error) {
     console.error('Failed to remove student:', error)
+    snackbar.value = { show: true, text: 'Failed to remove student', color: 'error' }
   } finally {
     removing.value = false
   }
@@ -344,3 +373,38 @@ onMounted(() => {
   loadStudents()
 })
 </script>
+
+<style scoped>
+.section-underline {
+  width: 60px;
+  height: 3px;
+  background-color: rgb(var(--v-theme-primary));
+  transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.section-underline:hover {
+  width: 64px;
+}
+
+.border-bottom {
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.border-top {
+  border-top: 1px solid #E2E8F0;
+}
+
+.calm-list {
+  background: transparent;
+}
+
+.calm-list-item {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 12px;
+}
+
+.calm-list-item:hover {
+  transform: translateX(4px);
+  background-color: rgba(99, 102, 241, 0.04);
+}
+</style>

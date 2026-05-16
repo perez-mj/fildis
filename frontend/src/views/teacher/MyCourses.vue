@@ -1,86 +1,81 @@
 <!-- frontend/src/views/teacher/MyCourses.vue -->
 <template>
   <div class="my-courses">
-    <v-container fluid>
-      <v-row>
-        <v-col cols="12">
-          <div class="d-flex align-center justify-space-between mb-4 flex-wrap">
-            <v-text-field
-              v-model="searchQuery"
-              prepend-inner-icon="mdi-magnify"
-              placeholder="Search courses..."
-              density="compact"
-              hide-details
-              class="search-field"
-              style="max-width: 300px"
-            ></v-text-field>
+    <v-container fluid class="pa-4 pa-sm-6">
+      <!-- Header -->
+      <div class="mb-6">
+        <div class="d-flex align-center justify-space-between flex-wrap">
+          <div>
+            <h1 class="text-h4 font-weight-light mb-2">My Courses</h1>
+            <div class="section-underline"></div>
           </div>
-        </v-col>
-      </v-row>
+          <v-text-field
+            v-model="searchQuery"
+            prepend-inner-icon="mdi-magnify"
+            placeholder="Search courses..."
+            density="comfortable"
+            hide-details
+            class="search-field mt-3 mt-sm-0"
+            variant="outlined"
+            clearable
+          ></v-text-field>
+        </div>
+      </div>
 
+      <!-- Courses Grid -->
       <v-row>
         <v-col v-for="course in filteredCourses" :key="course._id" cols="12" md="6" lg="4" xl="3">
-          <v-card :loading="loading" hover class="course-card" elevation="2">
-            <v-img
-              :src="getCourseImage(course.courseCode)"
-              height="140"
-              cover
-              class="course-header"
-            >
-              <div class="d-flex justify-end pa-2">
-                <v-chip :color="getStatusColor(course)" size="small" class="status-chip">
+          <v-card variant="outlined" class="course-card" :loading="loading">
+            <div class="course-header" :style="{ backgroundImage: `url(${getCourseImage(course.courseCode)})` }">
+              <div class="overlay"></div>
+              <div class="d-flex justify-end pa-3">
+                <v-chip :color="getStatusColor(course)" size="x-small" variant="tonal">
                   {{ course.isActive ? 'Active' : 'Inactive' }}
                 </v-chip>
               </div>
-            </v-img>
+            </div>
 
-            <v-card-item>
-              <v-card-title class="text-h6">{{ course.courseName }}</v-card-title>
-              <v-card-subtitle class="d-flex align-center">
-                <v-icon icon="mdi-barcode" size="small" class="me-1"></v-icon>
-                {{ course.courseCode }}
+            <v-card-item class="pa-4">
+              <v-card-title class="text-h6 font-weight-light pa-0 mb-1">{{ course.courseName }}</v-card-title>
+              <v-card-subtitle class="pa-0 d-flex align-center">
+                <v-icon icon="mdi-barcode" size="12" class="me-1"></v-icon>
+                <span class="text-caption">{{ course.courseCode }}</span>
               </v-card-subtitle>
             </v-card-item>
 
-            <v-card-text>
-              <div class="d-flex ga-3 mb-3 flex-wrap">
+            <v-card-text class="pt-0 px-4 pb-0">
+              <div class="d-flex ga-3 mb-3">
                 <div class="d-flex align-center">
-                  <v-icon size="small" icon="mdi-account-group" class="me-1"></v-icon>
+                  <v-icon size="12" icon="mdi-account-group" class="me-1" color="grey-darken-1"></v-icon>
                   <span class="text-caption">{{ course.students?.length || 0 }} / {{ course.maxStudents || 50 }}</span>
                 </div>
                 <div class="d-flex align-center">
-                  <v-icon size="small" icon="mdi-file-document" class="me-1"></v-icon>
+                  <v-icon size="12" icon="mdi-file-document" class="me-1" color="grey-darken-1"></v-icon>
                   <span class="text-caption">{{ course.materials?.length || 0 }} materials</span>
-                </div>
-                <div class="d-flex align-center">
-                  <v-icon size="small" icon="mdi-format-list-checkbox" class="me-1"></v-icon>
-                  <span class="text-caption">{{ course.assignments?.length || 0 }} assignments</span>
                 </div>
               </div>
               
-              <v-divider class="my-2"></v-divider>
-              
-              <p class="text-body-2 text-medium-emphasis mt-2">
+              <p class="text-body-2 text-grey-darken-1 mt-2">
                 {{ truncateText(course.description, 100) }}
               </p>
 
               <div class="mt-3">
                 <div class="d-flex justify-space-between text-caption mb-1">
-                  <span>Enrollment Progress</span>
+                  <span class="text-grey-darken-1">Enrollment</span>
                   <span>{{ Math.round((course.students?.length || 0) / (course.maxStudents || 50) * 100) }}%</span>
                 </div>
                 <v-progress-linear
                   :model-value="(course.students?.length || 0) / (course.maxStudents || 50) * 100"
                   :color="getProgressColor((course.students?.length || 0) / (course.maxStudents || 50))"
-                  height="6"
+                  height="3"
                   rounded
                 ></v-progress-linear>
               </div>
 
-              <div class="mt-3" v-if="course.endDate">
+              <div class="mt-2" v-if="course.endDate">
                 <div class="d-flex align-center">
-                  <v-icon icon="mdi-calendar-end" size="small" class="me-1"></v-icon>
-                  <span class="text-caption">Ends: {{ formatDate(course.endDate) }}</span>
+                  <v-icon icon="mdi-calendar-end" size="12" class="me-1" color="grey-darken-1"></v-icon>
+                  <span class="text-caption text-grey-darken-1">Ends: {{ formatDate(course.endDate) }}</span>
                 </div>
               </div>
             </v-card-text>
@@ -94,6 +89,7 @@
                 size="small"
                 :to="`/teacher/courses/${course._id}/materials`"
                 prepend-icon="mdi-folder"
+                rounded="pill"
               >
                 Materials
               </v-btn>
@@ -103,24 +99,24 @@
                 size="small"
                 :to="`/teacher/assignments?course=${course._id}`"
                 prepend-icon="mdi-format-list-checkbox"
+                rounded="pill"
               >
-                Assignments
+                Tasks
               </v-btn>
-              <v-menu>
+              <v-menu location="bottom">
                 <template v-slot:activator="{ props }">
-                  <v-btn color="grey" variant="text" size="small" v-bind="props" icon="mdi-dots-vertical">
-                  </v-btn>
+                  <v-btn color="grey" variant="text" size="small" v-bind="props" icon="mdi-dots-vertical"></v-btn>
                 </template>
-                <v-list density="compact">
-                  <v-list-item :to="`/teacher/announcements?course=${course._id}`">
-                    <v-list-item-title>
-                      <v-icon start icon="mdi-bullhorn" size="small"></v-icon>
+                <v-list density="compact" variant="outlined" class="calm-menu">
+                  <v-list-item :to="`/teacher/announcements?course=${course._id}`" rounded="lg">
+                    <v-list-item-title class="text-caption">
+                      <v-icon start icon="mdi-bullhorn" size="14"></v-icon>
                       Post Announcement
                     </v-list-item-title>
                   </v-list-item>
-                  <v-list-item @click="quickCreateAssignment(course)">
-                    <v-list-item-title>
-                      <v-icon start icon="mdi-plus-circle" size="small"></v-icon>
+                  <v-list-item @click="quickCreateAssignment(course)" rounded="lg">
+                    <v-list-item-title class="text-caption">
+                      <v-icon start icon="mdi-plus-circle" size="14"></v-icon>
                       Create Assignment
                     </v-list-item-title>
                   </v-list-item>
@@ -130,26 +126,31 @@
           </v-card>
         </v-col>
 
+        <!-- Empty State -->
         <v-col v-if="filteredCourses.length === 0 && !loading" cols="12">
-          <v-empty-state
-            headline="No Courses Found"
-            :title="searchQuery ? 'No matching courses' : 'You haven\'t been assigned to any courses yet'"
-            :text="searchQuery ? 'Try a different search term' : 'Contact the administrator to get assigned to courses.'"
-            image="https://cdn.jsdelivr.net/npm/@mdi/svg@6.7.96/svg/bookshelf.svg"
-          >
-            <template v-slot:actions v-if="!searchQuery">
-              <v-btn color="primary" variant="text" to="/teacher/dashboard">
-                Go to Dashboard
-              </v-btn>
-            </template>
-          </v-empty-state>
+          <v-card variant="outlined" class="text-center pa-8">
+            <v-icon icon="mdi-book-open-variant" size="64" color="grey-lighten-1" class="mb-3" opacity="0.5"></v-icon>
+            <div class="text-h6 font-weight-light text-grey-darken-1">
+              {{ searchQuery ? 'No matching courses' : 'No courses assigned yet' }}
+            </div>
+            <div class="text-caption text-grey-darken-1 mt-1">
+              {{ searchQuery ? 'Try a different search term' : 'Contact the administrator to get assigned to courses' }}
+            </div>
+            <v-btn v-if="!searchQuery" color="primary" variant="outlined" to="/teacher/dashboard" class="mt-4" rounded="pill">
+              Go to Dashboard
+            </v-btn>
+          </v-card>
         </v-col>
       </v-row>
     </v-container>
 
     <!-- Quick Create Assignment Dialog -->
-    <v-dialog v-model="showAssignmentDialog" max-width="800px">
-      <CreateAssignmentDialog :course-id="selectedCourse?._id" @close="showAssignmentDialog = false" @created="onAssignmentCreated" />
+    <v-dialog v-model="showAssignmentDialog" max-width="800px" scrollable>
+      <CreateAssignmentDialog 
+        :course-id="selectedCourse?._id" 
+        @close="showAssignmentDialog = false" 
+        @created="onAssignmentCreated" 
+      />
     </v-dialog>
   </div>
 </template>
@@ -207,8 +208,8 @@ const getCourseImage = (code) => {
 }
 
 const getStatusColor = (course) => {
-  if (!course.isActive) return 'error'
-  if (new Date(course.endDate) < new Date()) return 'warning'
+  if (!course.isActive) return 'grey'
+  if (course.endDate && new Date(course.endDate) < new Date()) return 'warning'
   return 'success'
 }
 
@@ -225,7 +226,7 @@ const quickCreateAssignment = (course) => {
 
 const onAssignmentCreated = () => {
   showAssignmentDialog.value = false
-  teacherStore.fetchMyCourses() // Refresh to update assignment count
+  teacherStore.fetchMyCourses()
 }
 
 const loadCourses = async () => {
@@ -245,35 +246,52 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.section-underline {
+  width: 60px;
+  height: 3px;
+  background-color: rgb(var(--v-theme-primary));
+  transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.section-underline:hover {
+  width: 64px;
+}
+
 .course-card {
-  transition: all 0.3s ease;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 
 .course-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
 }
 
 .course-header {
+  height: 120px;
+  background-size: cover;
+  background-position: center;
   position: relative;
 }
 
-.status-chip {
-  backdrop-filter: blur(4px);
-  background-color: rgba(0, 0, 0, 0.7) !important;
-  color: white !important;
+.course-header .overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%);
 }
 
 .search-field {
   max-width: 300px;
 }
 
+.calm-menu {
+  border-radius: 12px !important;
+}
+
 @media (max-width: 600px) {
   .search-field {
-    margin-top: 12px;
     max-width: 100%;
   }
 }

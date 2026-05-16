@@ -23,11 +23,11 @@
       </v-icon>
       
       <span v-if="!$vuetify.display.mobile || $vuetify.display.width >= 360">
-        LMS Portal
+        SIKHAY-ARAL LMS
       </span>
       
       <span v-else class="d-inline d-sm-none">
-        LMS
+        SIKHAY-ARAL
       </span>
     </v-app-bar-title>
 

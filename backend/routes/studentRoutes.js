@@ -23,8 +23,8 @@ const upload = multer({
 const handleUploadError = (err, req, res, next) => {
     if (err instanceof multer.MulterError) {
         if (err.code === 'FILE_TOO_LARGE') {
-            return res.status(400).json({ 
-                message: `File too large. Maximum size is ${(parseInt(process.env.MAX_FILE_SIZE) || 50 * 1024 * 1024) / (1024 * 1024)}MB` 
+            return res.status(400).json({
+                message: `File too large. Maximum size is ${(parseInt(process.env.MAX_FILE_SIZE) || 50 * 1024 * 1024) / (1024 * 1024)}MB`
             });
         }
         return res.status(400).json({ message: err.message });
@@ -86,7 +86,7 @@ router.get('/courses/:courseId', isEnrolled, async (req, res) => {
             })
             .populate({
                 path: 'announcements',
-                match: { 
+                match: {
                     isActive: true,
                     $or: [
                         { expiresAt: null },
@@ -239,11 +239,11 @@ router.post('/materials/:materialId/download', async (req, res) => {
 // @access  Student (enrolled only)
 router.get('/courses/:courseId/assignments', isEnrolled, async (req, res) => {
     try {
-        const assignments = await Assignment.find({ 
+        const assignments = await Assignment.find({
             courseId: req.params.courseId,
             isActive: true
         })
-        .sort({ dueDate: 1 });
+            .sort({ dueDate: 1 });
 
         // Get submission status for each assignment
         const assignmentsWithStatus = await Promise.all(assignments.map(async (assignment) => {
@@ -336,8 +336,13 @@ router.post('/assignments/:assignmentId/submit',
             }
 
             const now = new Date();
-            if (now < assignment.availableFrom || now > assignment.availableUntil) {
-                return res.status(400).json({ message: 'Assignment is not available for submission' });
+            if (now < assignment.availableFrom) {
+                return res.status(400).json({ message: 'Assignment is not yet available' });
+            }
+
+            // Only check availableUntil if it exists
+            if (assignment.availableUntil && now > assignment.availableUntil) {
+                return res.status(400).json({ message: 'Assignment submission deadline has passed' });
             }
 
             const existingSubmission = await Submission.findOne({
@@ -351,44 +356,58 @@ router.post('/assignments/:assignmentId/submit',
 
             const submittedFiles = [];
             if (req.files && req.files.length > 0) {
+                // Validate files
                 for (const file of req.files) {
                     const fileExt = file.originalname.split('.').pop().toLowerCase();
                     if (!assignment.allowedFileTypes.includes(fileExt)) {
-                        return res.status(400).json({ 
-                            message: `File type .${fileExt} is not allowed for this assignment` 
+                        return res.status(400).json({
+                            message: `File type .${fileExt} is not allowed for this assignment`
                         });
                     }
 
                     if (file.size > assignment.maxFileSize) {
-                        return res.status(400).json({ 
-                            message: `File ${file.originalname} exceeds maximum allowed size` 
+                        return res.status(400).json({
+                            message: `File ${file.originalname} exceeds maximum allowed size`
                         });
                     }
                 }
 
-                const driveFiles = await googleDriveService.uploadMultipleFiles(
+                // Upload to Google Drive
+                const uploadResult = await googleDriveService.uploadMultipleFiles(
                     req.files,
                     'submissions',
-                    { 
+                    {
                         userId: req.user.id,
                         assignmentId: req.params.assignmentId,
                         courseId: assignment.courseId
                     }
                 );
 
-                driveFiles.forEach((driveFile, index) => {
-                    submittedFiles.push({
-                        googleDriveFileId: driveFile.fileId,
-                        fileName: driveFile.fileName,
-                        originalFileName: req.files[index].originalname,
-                        fileType: req.files[index].originalname.split('.').pop().toLowerCase(),
-                        fileSize: driveFile.fileSize,
-                        mimeType: driveFile.mimeType,
-                        webViewLink: driveFile.webViewLink,
-                        webContentLink: driveFile.webContentLink,
-                        uploadedAt: new Date()
+                // Check if uploadResult has success array
+                if (uploadResult.success && uploadResult.success.length > 0) {
+                    uploadResult.success.forEach((driveFile, index) => {
+                        // Find the original file that corresponds to this upload
+                        const originalFile = req.files.find(f => f.originalname === driveFile.originalName);
+                        if (originalFile) {
+                            submittedFiles.push({
+                                googleDriveFileId: driveFile.fileId,
+                                fileName: driveFile.fileName,
+                                originalFileName: driveFile.originalName,
+                                fileType: driveFile.originalName.split('.').pop().toLowerCase(),
+                                fileSize: driveFile.fileSize,
+                                mimeType: driveFile.mimeType,
+                                webViewLink: driveFile.webViewLink,
+                                webContentLink: driveFile.webContentLink,
+                                uploadedAt: new Date()
+                            });
+                        }
                     });
-                });
+                }
+
+                // Log any failed uploads
+                if (uploadResult.failed && uploadResult.failed.length > 0) {
+                    console.warn(`${uploadResult.failed.length} file(s) failed to upload to Google Drive`);
+                }
             }
 
             const submission = new Submission({
@@ -427,18 +446,18 @@ router.post('/assignments/:assignmentId/submit',
 // @access  Student
 router.get('/submissions', async (req, res) => {
     try {
-        const submissions = await Submission.find({ 
-            studentId: req.user.id 
+        const submissions = await Submission.find({
+            studentId: req.user.id
         })
-        .populate({
-            path: 'assignmentId',
-            select: 'title maxScore dueDate availableFrom availableUntil courseId',
-            populate: {
-                path: 'courseId',
-                select: 'courseName courseCode'
-            }
-        })
-        .sort({ submissionDate: -1 });
+            .populate({
+                path: 'assignmentId',
+                select: 'title maxScore dueDate availableFrom availableUntil courseId',
+                populate: {
+                    path: 'courseId',
+                    select: 'courseName courseCode'
+                }
+            })
+            .sort({ submissionDate: -1 });
 
         res.json({
             success: true,
@@ -456,7 +475,7 @@ router.get('/submissions', async (req, res) => {
 router.get('/assignments/:assignmentId/my-submission', async (req, res) => {
     try {
         const assignment = await Assignment.findById(req.params.assignmentId);
-        
+
         if (!assignment) {
             return res.status(404).json({ message: 'Assignment not found' });
         }
@@ -514,7 +533,7 @@ router.put('/submissions/:submissionId',
 
             // Check if assignment is still open
             const now = new Date();
-            if (now > assignment.availableUntil) {
+            if (assignment.availableUntil && now > assignment.availableUntil) {
                 return res.status(400).json({ message: 'Assignment submission period has ended' });
             }
 
@@ -524,23 +543,23 @@ router.put('/submissions/:submissionId',
                 for (const file of req.files) {
                     const fileExt = file.originalname.split('.').pop().toLowerCase();
                     if (!assignment.allowedFileTypes.includes(fileExt)) {
-                        return res.status(400).json({ 
-                            message: `File type .${fileExt} is not allowed for this assignment` 
+                        return res.status(400).json({
+                            message: `File type .${fileExt} is not allowed for this assignment`
                         });
                     }
 
                     if (file.size > assignment.maxFileSize) {
-                        return res.status(400).json({ 
-                            message: `File ${file.originalname} exceeds maximum allowed size` 
+                        return res.status(400).json({
+                            message: `File ${file.originalname} exceeds maximum allowed size`
                         });
                     }
                 }
 
                 // Upload new files to Google Drive
-                const driveFiles = await googleDriveService.uploadMultipleFiles(
+                const uploadResult = await googleDriveService.uploadMultipleFiles(
                     req.files,
                     'submissions',
-                    { 
+                    {
                         userId: req.user.id,
                         assignmentId: submission.assignmentId,
                         courseId: assignment.courseId,
@@ -549,26 +568,37 @@ router.put('/submissions/:submissionId',
                     }
                 );
 
-                const newFiles = driveFiles.map((driveFile, index) => ({
-                    googleDriveFileId: driveFile.fileId,
-                    fileName: driveFile.fileName,
-                    originalFileName: req.files[index].originalname,
-                    fileType: req.files[index].originalname.split('.').pop().toLowerCase(),
-                    fileSize: driveFile.fileSize,
-                    mimeType: driveFile.mimeType,
-                    webViewLink: driveFile.webViewLink,
-                    webContentLink: driveFile.webContentLink,
-                    uploadedAt: new Date()
-                }));
+                // Process successful uploads
+                if (uploadResult.success && uploadResult.success.length > 0) {
+                    const newFiles = uploadResult.success.map((driveFile) => {
+                        const originalFile = req.files.find(f => f.originalname === driveFile.originalName);
+                        return {
+                            googleDriveFileId: driveFile.fileId,
+                            fileName: driveFile.fileName,
+                            originalFileName: driveFile.originalName,
+                            fileType: driveFile.originalName.split('.').pop().toLowerCase(),
+                            fileSize: driveFile.fileSize,
+                            mimeType: driveFile.mimeType,
+                            webViewLink: driveFile.webViewLink,
+                            webContentLink: driveFile.webContentLink,
+                            uploadedAt: new Date()
+                        };
+                    });
+                    
+                    submission.submittedFiles = [...submission.submittedFiles, ...newFiles];
+                }
 
-                submission.submittedFiles = [...submission.submittedFiles, ...newFiles];
+                // Log any failed uploads
+                if (uploadResult.failed && uploadResult.failed.length > 0) {
+                    console.warn(`${uploadResult.failed.length} file(s) failed to upload to Google Drive`);
+                }
             }
 
             submission.comments = req.body.comments || submission.comments;
             submission.submissionDate = now;
             submission.isLate = now > assignment.dueDate;
             submission.status = now > assignment.dueDate ? 'late' : 'submitted';
-            submission.attemptNumber += 1;
+            submission.attemptNumber = (submission.attemptNumber || 0) + 1;
 
             await submission.save();
 
@@ -591,20 +621,20 @@ router.put('/submissions/:submissionId',
 // @access  Student
 router.get('/grades', async (req, res) => {
     try {
-        const submissions = await Submission.find({ 
+        const submissions = await Submission.find({
             studentId: req.user.id,
             status: 'graded'
         })
-        .populate({
-            path: 'assignmentId',
-            select: 'title maxScore courseId',
-            populate: {
-                path: 'courseId',
-                select: 'courseName courseCode'
-            }
-        })
-        .populate('grade.gradedBy', 'firstName lastName')
-        .sort({ 'grade.gradedAt': -1 });
+            .populate({
+                path: 'assignmentId',
+                select: 'title maxScore courseId',
+                populate: {
+                    path: 'courseId',
+                    select: 'courseName courseCode'
+                }
+            })
+            .populate('grade.gradedBy', 'firstName lastName')
+            .sort({ 'grade.gradedAt': -1 });
 
         // Calculate statistics
         const totalGraded = submissions.length;
@@ -643,14 +673,14 @@ router.get('/grades', async (req, res) => {
 // @access  Student (enrolled only)
 router.get('/courses/:courseId/grades', isEnrolled, async (req, res) => {
     try {
-        const submissions = await Submission.find({ 
+        const submissions = await Submission.find({
             studentId: req.user.id,
             assignmentId: { $in: await Assignment.find({ courseId: req.params.courseId }).distinct('_id') },
             status: 'graded'
         })
-        .populate('assignmentId', 'title maxScore')
-        .populate('grade.gradedBy', 'firstName lastName')
-        .sort({ 'grade.gradedAt': -1 });
+            .populate('assignmentId', 'title maxScore')
+            .populate('grade.gradedBy', 'firstName lastName')
+            .sort({ 'grade.gradedAt': -1 });
 
         res.json({
             success: true,
@@ -683,9 +713,9 @@ router.get('/announcements', async (req, res) => {
                 { expiresAt: { $gt: new Date() } }
             ]
         })
-        .populate('author', 'firstName lastName')
-        .populate('courseId', 'courseName courseCode')
-        .sort({ isPinned: -1, createdAt: -1 });
+            .populate('author', 'firstName lastName')
+            .populate('courseId', 'courseName courseCode')
+            .sort({ isPinned: -1, createdAt: -1 });
 
         // Mark as read
         const userId = req.user.id;
@@ -693,7 +723,7 @@ router.get('/announcements', async (req, res) => {
             const alreadyRead = announcement.readBy.some(
                 r => r.user.toString() === userId
             );
-            
+
             if (!alreadyRead) {
                 announcement.readBy.push({ user: userId });
                 announcement.views += 1;
@@ -720,17 +750,17 @@ router.get('/stats', async (req, res) => {
     try {
         const [enrolledCourses, pendingAssignments, recentGrades] = await Promise.all([
             Course.countDocuments({ students: req.user.id }),
-            Submission.countDocuments({ 
+            Submission.countDocuments({
                 studentId: req.user.id,
                 status: { $in: ['submitted', 'late'] }
             }),
-            Submission.find({ 
+            Submission.find({
                 studentId: req.user.id,
                 status: 'graded'
             })
-            .populate('assignmentId', 'title')
-            .sort({ 'grade.gradedAt': -1 })
-            .limit(5)
+                .populate('assignmentId', 'title')
+                .sort({ 'grade.gradedAt': -1 })
+                .limit(5)
         ]);
 
         // Get upcoming deadlines
@@ -741,9 +771,9 @@ router.get('/stats', async (req, res) => {
             availableUntil: { $gt: now },
             isActive: true
         })
-        .populate('courseId', 'courseName courseCode')
-        .sort({ dueDate: 1 })
-        .limit(5);
+            .populate('courseId', 'courseName courseCode')
+            .sort({ dueDate: 1 })
+            .limit(5);
 
         res.json({
             success: true,

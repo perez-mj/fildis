@@ -183,7 +183,32 @@ const handleLogin = async () => {
       router.push('/student/dashboard')
     }
   } catch (err) {
-    error.value = 'Invalid email or password'
+    // More specific error handling
+    console.error('Login error:', err)
+    
+    if (err.response) {
+      // Server responded with error status
+      const status = err.response.status
+      const data = err.response.data
+      
+      if (status === 401) {
+        error.value = 'Invalid email or password'
+      } else if (status === 400) {
+        error.value = data.message || 'Please check your input'
+      } else if (status === 403) {
+        error.value = 'Account is locked or disabled'
+      } else if (status === 500) {
+        error.value = 'Server error. Please try again later'
+      } else {
+        error.value = data.message || 'Login failed. Please try again'
+      }
+    } else if (err.request) {
+      // Request was made but no response received
+      error.value = 'Network error. Please check your connection'
+    } else {
+      // Something else happened
+      error.value = err.message || 'An unexpected error occurred'
+    }
   } finally {
     loading.value = false
   }

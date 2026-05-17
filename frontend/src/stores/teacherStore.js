@@ -53,11 +53,26 @@ export const useTeacherStore = defineStore('teacher', {
       }
     },
 
+    async fetchAssignmentsForCourse(courseId) {
+      this.loading = true
+      try {
+        const response = await teacherService.getAssignments(courseId)
+        const assignments = response.data || []
+        // Store in assignments array
+        this.assignments = assignments
+        return assignments
+      } catch (error) {
+        this.error = error.response?.data?.message || 'Failed to fetch assignments'
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
     async uploadMaterial(courseId, formData) {
       this.loading = true
       try {
         const material = await teacherService.uploadMaterial(courseId, formData)
-        // Add to materials list if viewing current course
         if (this.currentCourse?._id === courseId) {
           this.materials.unshift(material)
         }
@@ -98,6 +113,23 @@ export const useTeacherStore = defineStore('teacher', {
       }
     },
 
+    async updateAssignment(assignmentId, data) {
+      this.loading = true
+      try {
+        const updatedAssignment = await teacherService.updateAssignment(assignmentId, data)
+        const index = this.assignments.findIndex(a => a._id === assignmentId)
+        if (index !== -1) {
+          this.assignments[index] = updatedAssignment
+        }
+        return updatedAssignment
+      } catch (error) {
+        this.error = error.response?.data?.message || 'Failed to update assignment'
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
     async fetchAssignmentSubmissions(assignmentId) {
       this.loading = true
       try {
@@ -112,26 +144,24 @@ export const useTeacherStore = defineStore('teacher', {
       }
     },
     
-async deleteAssignment(assignmentId) {
-    this.loading = true
-    try {
+    async deleteAssignment(assignmentId) {
+      this.loading = true
+      try {
         await teacherService.deleteAssignment(assignmentId)
-        // Remove from local state
         this.assignments = this.assignments.filter(a => a._id !== assignmentId)
         return true
-    } catch (error) {
+      } catch (error) {
         this.error = error.response?.data?.message || 'Failed to delete assignment'
         throw error
-    } finally {
+      } finally {
         this.loading = false
-    }
-},
+      }
+    },
 
     async gradeSubmission(submissionId, score, feedback) {
       this.loading = true
       try {
         const graded = await teacherService.gradeSubmission(submissionId, score, feedback)
-        // Update in submissions list
         const index = this.submissions.findIndex(s => s._id === submissionId)
         if (index !== -1) {
           this.submissions[index] = graded
@@ -161,7 +191,6 @@ async deleteAssignment(assignmentId) {
 
     setCurrentCourse(course) {
       this.currentCourse = course
-      // Reset related data
       this.materials = course?.materials || []
       this.assignments = course?.assignments || []
     },

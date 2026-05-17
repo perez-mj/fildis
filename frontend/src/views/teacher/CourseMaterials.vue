@@ -112,7 +112,7 @@
 
     <!-- Upload Dialog - Minimalist -->
     <v-dialog v-model="showUploadDialog" max-width="600px" scrollable>
-      <v-card variant="outlined">
+      <v-card>
         <v-card-title class="pa-4 d-flex align-center justify-space-between">
           <span class="text-h6 font-weight-light">Upload Course Material</span>
           <v-btn icon="mdi-close" variant="text" size="small" @click="closeUploadDialog"></v-btn>
@@ -176,7 +176,7 @@
 
     <!-- Delete Confirmation Dialog -->
     <v-dialog v-model="showDeleteDialog" max-width="400px">
-      <v-card variant="outlined">
+      <v-card>
         <v-card-title class="text-h6 font-weight-light pa-4">Delete Material</v-card-title>
         <v-divider></v-divider>
         <v-card-text class="pa-4">

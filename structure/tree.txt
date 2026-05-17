@@ -1,4 +1,4 @@
-Directory Tree — Generated on 5/16/2026, 11:21:28
+Directory Tree — Generated on 5/17/2026, 09:10:37
 Root: lms
 
 lms/
@@ -44,6 +44,7 @@ lms/
    ├─ jsconfig.json
    ├─ package-lock.json
    ├─ package.json
+   ├─ vercel.json
    ├─ vite.config.mjs
    ├─ public/
    │  └─ favicon.ico
@@ -55,9 +56,9 @@ lms/
       │  └─ main.css
       ├─ components/
       │  ├─ admin/
+      │  │  └─ AnnouncementCard.vue
       │  ├─ auth/
       │  ├─ common/
-      │  │  ├─ AnnouncementCard.vue
       │  │  ├─ Navbar.vue
       │  │  ├─ NavItem.vue
       │  │  └─ Sidebar.vue
@@ -70,12 +71,10 @@ lms/
       │     ├─ CreateAssignmentDialog.vue
       │     └─ PostAnnouncementDialog.vue
       ├─ layouts/
-      │  ├─ DashboardLayout.vue
-      │  └─ DefaultLayout.vue
+      │  └─ DashboardLayout.vue
       ├─ plugins/
       │  ├─ axios.js
       │  ├─ index.js
-      │  ├─ modalFix.js
       │  └─ vuetify.js
       ├─ router/
       │  └─ index.js

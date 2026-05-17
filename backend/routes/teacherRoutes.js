@@ -181,6 +181,27 @@ router.delete('/materials/:materialId', async (req, res) => {
     }
 });
 
+// @route   GET /api/teacher/courses/:courseId/assignments
+// @desc    Get all assignments for a specific course
+router.get('/courses/:courseId/assignments', 
+    isCourseTeacher,
+    async (req, res) => {
+        try {
+            const assignments = await Assignment.find({ 
+                courseId: req.params.courseId 
+            }).populate('courseId', 'courseName courseCode');
+            
+            res.json({
+                success: true,
+                data: assignments
+            });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+);
+
 // @route   POST /api/teacher/courses/:courseId/assignments
 // @desc    Create assignment with Google Drive attachments
 router.post('/courses/:courseId/assignments', 
@@ -270,51 +291,166 @@ router.post('/courses/:courseId/assignments',
 );
 
 // @route   PUT /api/teacher/assignments/:assignmentId
-// @desc    Update assignment
-router.put('/assignments/:assignmentId', async (req, res) => {
-    try {
-        const assignmentId = req.params.assignmentId;
-        
-        // Validate assignment ID
-        if (!assignmentId || typeof assignmentId === 'object') {
-            return res.status(400).json({ message: 'Invalid assignment ID format' });
-        }
-        
-        const assignment = await Assignment.findById(assignmentId);
-
-        if (!assignment) {
-            return res.status(404).json({ message: 'Assignment not found' });
-        }
-
-        // Check if teacher owns this assignment
-        if (assignment.createdBy.toString() !== req.user.id) {
-            return res.status(403).json({ message: 'Not authorized' });
-        }
-
-        const updatableFields = ['title', 'description', 'maxScore', 'passingScore',
-                                 'dueDate', 'availableUntil', 'instructions', 'isActive'];
-        
-        updatableFields.forEach(field => {
-            if (req.body[field] !== undefined) {
-                assignment[field] = req.body[field];
+// @desc    Update assignment (supports file attachments)
+router.put('/assignments/:assignmentId', 
+    upload.array('attachments', 5),
+    handleUploadError,
+    async (req, res) => {
+        try {
+            const assignmentId = req.params.assignmentId;
+            
+            // Validate assignment ID
+            if (!assignmentId || typeof assignmentId === 'object') {
+                return res.status(400).json({ message: 'Invalid assignment ID format' });
             }
-        });
-
-        await assignment.save();
-
-        res.json({
-            success: true,
-            message: 'Assignment updated successfully',
-            data: assignment
-        });
-    } catch (error) {
-        console.error(error);
-        if (error.name === 'CastError') {
-            return res.status(400).json({ message: 'Invalid assignment ID format' });
+            
+            // Parse form data - handle both JSON and FormData
+            let updateData = {};
+            
+            // If it's FormData with files
+            if (req.body && Object.keys(req.body).length > 0) {
+                // Handle string fields that might be booleans or numbers
+                updateData.title = req.body.title;
+                updateData.description = req.body.description;
+                updateData.instructions = req.body.instructions;
+                updateData.maxScore = req.body.maxScore ? parseInt(req.body.maxScore) : undefined;
+                updateData.passingScore = req.body.passingScore ? parseInt(req.body.passingScore) : undefined;
+                updateData.isActive = req.body.isActive === 'true' || req.body.isActive === true;
+                updateData.availableFrom = req.body.availableFrom;
+                updateData.dueDate = req.body.dueDate;
+                updateData.availableUntil = req.body.availableUntil || null;
+                updateData.allowedFileTypes = req.body.allowedFileTypes ? req.body.allowedFileTypes.split(',') : undefined;
+                updateData.maxFileSize = req.body.maxFileSize ? parseInt(req.body.maxFileSize) : undefined;
+                
+                // Handle keepAttachments if provided
+                let keepAttachmentIds = [];
+                if (req.body.keepAttachments) {
+                    try {
+                        keepAttachmentIds = JSON.parse(req.body.keepAttachments);
+                    } catch (e) {
+                        keepAttachmentIds = [];
+                    }
+                }
+                
+                // Get existing assignment
+                const assignment = await Assignment.findById(assignmentId);
+                
+                if (!assignment) {
+                    return res.status(404).json({ message: 'Assignment not found' });
+                }
+                
+                // Check if teacher owns this assignment
+                if (assignment.createdBy.toString() !== req.user.id) {
+                    return res.status(403).json({ message: 'Not authorized' });
+                }
+                
+                // Filter attachments to keep
+                if (keepAttachmentIds.length > 0 && assignment.attachments) {
+                    assignment.attachments = assignment.attachments.filter(
+                        att => keepAttachmentIds.includes(att.googleDriveFileId)
+                    );
+                } else if (keepAttachmentIds.length === 0 && req.body.keepAttachments !== undefined) {
+                    // If keepAttachments is empty array, remove all attachments
+                    // Delete old attachments from Google Drive
+                    for (const attachment of assignment.attachments || []) {
+                        if (attachment.googleDriveFileId) {
+                            try {
+                                await googleDriveService.deleteFile(attachment.googleDriveFileId);
+                            } catch (err) {
+                                console.error('Error deleting attachment:', err);
+                            }
+                        }
+                    }
+                    assignment.attachments = [];
+                }
+                
+                // Upload new attachments to Google Drive
+                if (req.files && req.files.length > 0) {
+                    const uploadResult = await googleDriveService.uploadMultipleFiles(
+                        req.files,
+                        'assignments',
+                        { 
+                            userId: req.user.id,
+                            courseId: assignment.courseId,
+                            assignmentTitle: updateData.title || assignment.title 
+                        }
+                    );
+                    
+                    if (uploadResult.success && uploadResult.success.length > 0) {
+                        uploadResult.success.forEach((driveFile) => {
+                            assignment.attachments.push({
+                                googleDriveFileId: driveFile.fileId,
+                                fileName: driveFile.fileName,
+                                originalFileName: driveFile.originalName,
+                                fileType: driveFile.originalName.split('.').pop().toLowerCase(),
+                                fileSize: driveFile.fileSize,
+                                mimeType: driveFile.mimeType,
+                                webViewLink: driveFile.webViewLink,
+                                webContentLink: driveFile.webContentLink,
+                                uploadedAt: new Date()
+                            });
+                        });
+                    }
+                }
+                
+                // Update text fields
+                const updatableFields = ['title', 'description', 'maxScore', 'passingScore',
+                                         'dueDate', 'availableUntil', 'instructions', 'isActive', 
+                                         'allowedFileTypes', 'maxFileSize', 'availableFrom'];
+                
+                updatableFields.forEach(field => {
+                    if (updateData[field] !== undefined && updateData[field] !== null) {
+                        assignment[field] = updateData[field];
+                    }
+                });
+                
+                await assignment.save();
+                
+                return res.json({
+                    success: true,
+                    message: 'Assignment updated successfully',
+                    data: assignment
+                });
+            } else {
+                // Handle regular JSON request (no files)
+                const assignment = await Assignment.findById(assignmentId);
+                
+                if (!assignment) {
+                    return res.status(404).json({ message: 'Assignment not found' });
+                }
+                
+                // Check if teacher owns this assignment
+                if (assignment.createdBy.toString() !== req.user.id) {
+                    return res.status(403).json({ message: 'Not authorized' });
+                }
+                
+                const updatableFields = ['title', 'description', 'maxScore', 'passingScore',
+                                         'dueDate', 'availableUntil', 'instructions', 'isActive',
+                                         'allowedFileTypes', 'maxFileSize', 'availableFrom'];
+                
+                updatableFields.forEach(field => {
+                    if (req.body[field] !== undefined) {
+                        assignment[field] = req.body[field];
+                    }
+                });
+                
+                await assignment.save();
+                
+                return res.json({
+                    success: true,
+                    message: 'Assignment updated successfully',
+                    data: assignment
+                });
+            }
+        } catch (error) {
+            console.error(error);
+            if (error.name === 'CastError') {
+                return res.status(400).json({ message: 'Invalid assignment ID format' });
+            }
+            res.status(500).json({ message: `Server error: ${error.message}` });
         }
-        res.status(500).json({ message: 'Server error' });
     }
-});
+);
 
 // @route   DELETE /api/teacher/assignments/:assignmentId
 // @desc    Delete an assignment and all its submissions

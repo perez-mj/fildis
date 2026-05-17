@@ -107,7 +107,7 @@
                 <template v-slot:activator="{ props }">
                   <v-btn color="grey" variant="text" size="small" v-bind="props" icon="mdi-dots-vertical"></v-btn>
                 </template>
-                <v-list density="compact" variant="outlined" class="calm-menu">
+                <v-list density="compact" class="calm-menu" elevation="0">
                   <v-list-item :to="`/teacher/announcements?course=${course._id}`" rounded="lg">
                     <v-list-item-title class="text-caption">
                       <v-icon start icon="mdi-bullhorn" size="14"></v-icon>

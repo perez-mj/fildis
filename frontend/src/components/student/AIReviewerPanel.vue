@@ -113,7 +113,6 @@
 
         <v-alert v-if="reviewer.summary" type="info" variant="tonal" density="compact" class="mb-3 rounded-lg">
           <div class="d-flex align-start">
-            <v-icon size="16" class="mr-2 mt-0.5">mdi-lightbulb-outline</v-icon>
             <span class="text-caption text-sm-body-2">{{ reviewer.summary }}</span>
           </div>
         </v-alert>

@@ -3,13 +3,8 @@
   <v-container fluid class="submit-container">
     <v-row class="mb-6">
       <v-col cols="12">
-        <v-btn
-          variant="text"
-          :to="{ name: 'MyAssignments' }"
-          class="back-btn mb-3"
-          prepend-icon="mdi-arrow-left"
-          size="small"
-        >
+        <v-btn variant="text" :to="{ name: 'MyAssignments' }" class="back-btn mb-3" prepend-icon="mdi-arrow-left"
+          size="small">
           Back to Assignments
         </v-btn>
         <div class="assignment-header">
@@ -20,12 +15,7 @@
               {{ assignment?.courseId?.courseCode }} • {{ assignment?.courseId?.courseName }}
             </p>
           </div>
-          <v-chip 
-            :color="isOverdue ? 'error' : 'success'" 
-            variant="light" 
-            size="large"
-            class="status-chip"
-          >
+          <v-chip :color="isOverdue ? 'error' : 'success'" variant="light" size="large" class="status-chip">
             <v-icon start :icon="isOverdue ? 'mdi-alert' : 'mdi-check-circle'"></v-icon>
             {{ isOverdue ? 'Overdue' : 'Active' }}
           </v-chip>
@@ -42,7 +32,7 @@
             <div class="card-accent"></div>
           </v-card-title>
           <v-divider></v-divider>
-          
+
           <v-card-text class="pa-4">
             <!-- Description -->
             <div class="detail-section mb-4">
@@ -62,13 +52,8 @@
             <div class="detail-section mb-4" v-if="assignment?.attachments?.length">
               <div class="detail-label">Resources</div>
               <div class="attachments-list">
-                <a
-                  v-for="(attachment, index) in assignment.attachments"
-                  :key="index"
-                  :href="attachment.webViewLink"
-                  target="_blank"
-                  class="attachment-link"
-                >
+                <a v-for="(attachment, index) in assignment.attachments" :key="index" :href="attachment.webViewLink"
+                  target="_blank" class="attachment-link">
                   <v-icon size="16" :color="getFileTypeColor(attachment.fileType)" class="mr-2">
                     {{ getFileIcon(attachment.fileType) }}
                   </v-icon>
@@ -121,7 +106,7 @@
             <div class="card-accent"></div>
           </v-card-title>
           <v-divider></v-divider>
-          
+
           <v-card-text class="pa-4">
             <div class="submission-status mb-3">
               <div class="detail-label">Status</div>
@@ -138,13 +123,8 @@
             <div class="submission-files mb-3" v-if="existingSubmission.submittedFiles?.length">
               <div class="detail-label mb-2">Submitted Files</div>
               <div class="files-list">
-                <a
-                  v-for="(file, idx) in existingSubmission.submittedFiles"
-                  :key="idx"
-                  :href="file.webViewLink"
-                  target="_blank"
-                  class="file-link"
-                >
+                <a v-for="(file, idx) in existingSubmission.submittedFiles" :key="idx" :href="file.webViewLink"
+                  target="_blank" class="file-link">
                   <v-icon size="16" class="mr-2">mdi-file-outline</v-icon>
                   <span class="text-caption">{{ file.originalFileName || file.fileName }}</span>
                   <v-chip size="x-small" variant="light" class="ml-auto">
@@ -189,45 +169,25 @@
             <div class="card-accent"></div>
           </v-card-title>
           <v-divider></v-divider>
-          
+
           <v-card-text class="pa-4">
-            <v-alert
-              v-if="existingSubmission?.grade"
-              type="success"
-              variant="tonal"
-              class="mb-4 rounded-lg"
-              icon="mdi-check-circle"
-            >
+            <v-alert v-if="existingSubmission?.grade" type="success" variant="tonal" class="mb-4 rounded-lg"
+              icon="mdi-check-circle">
               This assignment has been graded. Your submission is final.
             </v-alert>
 
-            <v-alert
-              v-else-if="!canSubmit"
-              type="warning"
-              variant="tonal"
-              class="mb-4 rounded-lg"
-              icon="mdi-alert"
-            >
+            <v-alert v-else-if="!canSubmit" type="warning" variant="tonal" class="mb-4 rounded-lg" icon="mdi-alert">
               This assignment is not currently available for submission.
               <div class="text-caption mt-1">
-                Available from {{ formatDate(assignment?.availableFrom) }} to {{ formatDate(assignment?.availableUntil) }}
+                Available from {{ formatDate(assignment?.availableFrom) }} to {{ formatDate(assignment?.availableUntil)
+                }}
               </div>
             </v-alert>
 
             <v-form ref="form" v-model="valid" v-else>
-              <v-file-input
-                v-model="files"
-                :label="existingSubmission ? 'Add Additional Files' : 'Upload Files'"
-                multiple
-                :accept="getAcceptString"
-                :rules="fileRules"
-                prepend-icon="mdi-cloud-upload"
-                variant="outlined"
-                show-size
-                counter
-                class="file-input"
-                :disabled="!canSubmit"
-              >
+              <v-file-input v-model="files" :label="existingSubmission ? 'Add Additional Files' : 'Upload Files'"
+                multiple :accept="getAcceptString" :rules="fileRules" prepend-icon="mdi-cloud-upload" variant="outlined"
+                show-size counter class="file-input" :disabled="!canSubmit">
                 <template v-slot:selection="{ fileNames }">
                   <template v-for="fileName in fileNames" :key="fileName">
                     <v-chip size="small" class="mr-2">
@@ -237,32 +197,16 @@
                 </template>
               </v-file-input>
 
-              <v-textarea
-                v-model="comments"
-                label="Comments (Optional)"
-                placeholder="Add any comments or notes for your instructor..."
-                variant="outlined"
-                rows="4"
-                :disabled="!canSubmit"
-                class="mt-4"
-              ></v-textarea>
+              <v-textarea v-model="comments" label="Comments (Optional)"
+                placeholder="Add any comments or notes for your instructor..." variant="outlined" rows="4"
+                :disabled="!canSubmit" class="mt-4"></v-textarea>
 
               <div class="d-flex gap-3 mt-4">
-                <v-btn
-                  variant="outlined"
-                  :to="{ name: 'MyAssignments' }"
-                  class="flex-grow-1"
-                >
+                <v-btn variant="outlined" :to="{ name: 'MyAssignments' }" class="flex-grow-1">
                   Cancel
                 </v-btn>
-                <v-btn
-                  color="primary"
-                  variant="flat"
-                  :loading="submitting"
-                  :disabled="!valid || !canSubmit"
-                  class="flex-grow-1"
-                  height="48"
-                >
+                <v-btn color="primary" variant="flat" :loading="submitting" :disabled="!valid || !canSubmit"
+                  class="flex-grow-1" height="48" @click="submitAssignment">
                   <v-icon start :icon="existingSubmission ? 'mdi-update' : 'mdi-send'"></v-icon>
                   {{ existingSubmission ? 'Update Submission' : 'Submit Assignment' }}
                 </v-btn>
@@ -280,10 +224,12 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAssignmentStore } from '@/stores/assignmentStore'
 import { format } from 'date-fns'
+import { inject } from 'vue'
 
 const route = useRoute()
 const router = useRouter()
 const assignmentStore = useAssignmentStore()
+const snackbar = inject('snackbar')
 
 const assignmentId = route.params.assignmentId
 const assignment = ref(null)
@@ -310,7 +256,7 @@ const canSubmit = computed(() => {
   if (existingSubmission.value?.grade) return false
   const now = new Date()
   const availableFrom = new Date(assignment.value.availableFrom || assignment.value.createdAt)
-  const availableUntil = new Date(assignment.value.availableUntil || assignment.value.dueDate)
+  const availableUntil = assignment.value.availableUntil ? new Date(assignment.value.availableUntil) : new Date(assignment.value.dueDate)
   return now >= availableFrom && now <= availableUntil
 })
 
@@ -412,11 +358,22 @@ const loadAssignment = async () => {
     }
   } catch (error) {
     console.error('Failed to load assignment:', error)
+    if (snackbar) snackbar.value = { show: true, text: 'Failed to load assignment', color: 'error' }
   }
 }
 
 const submitAssignment = async () => {
-  if (!form.value?.validate()) return
+  console.log('Submit button clicked')
+  
+  if (!form.value?.validate()) {
+    console.log('Form validation failed')
+    return
+  }
+  
+  if (files.value.length === 0 && !existingSubmission.value) {
+    if (snackbar) snackbar.value = { show: true, text: 'Please upload at least one file', color: 'warning' }
+    return
+  }
   
   submitting.value = true
   try {
@@ -427,9 +384,16 @@ const submitAssignment = async () => {
     formData.append('comments', comments.value)
     
     await assignmentStore.submitAssignment(assignmentId, formData)
-    router.push({ name: 'MyAssignments' })
+    
+    if (snackbar) snackbar.value = { show: true, text: 'Assignment submitted successfully!', color: 'success' }
+    
+    setTimeout(() => {
+      router.push({ name: 'MyAssignments' })
+    }, 1500)
   } catch (error) {
     console.error('Failed to submit assignment:', error)
+    const errorMessage = error.response?.data?.message || error.message || 'Failed to submit assignment'
+    if (snackbar) snackbar.value = { show: true, text: errorMessage, color: 'error' }
   } finally {
     submitting.value = false
   }
@@ -472,7 +436,9 @@ onMounted(() => {
 }
 
 /* Cards */
-.details-card, .submission-card, .form-card {
+.details-card,
+.submission-card,
+.form-card {
   border: 1px solid #e2e8f0;
   transition: all 0.2s ease;
 }
@@ -511,13 +477,15 @@ onMounted(() => {
 }
 
 /* Attachments */
-.attachments-list, .files-list {
+.attachments-list,
+.files-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.attachment-link, .file-link {
+.attachment-link,
+.file-link {
   display: flex;
   align-items: center;
   padding: 8px 12px;
@@ -528,7 +496,8 @@ onMounted(() => {
   transition: all 0.2s ease;
 }
 
-.attachment-link:hover, .file-link:hover {
+.attachment-link:hover,
+.file-link:hover {
   background: #f1f5f9;
   transform: translateX(4px);
 }
@@ -623,11 +592,11 @@ onMounted(() => {
   .assignment-header {
     flex-direction: column;
   }
-  
+
   .metadata-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .grade-score-value {
     font-size: 1.5rem;
   }

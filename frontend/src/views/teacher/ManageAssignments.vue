@@ -4,10 +4,10 @@
     <v-container fluid class="pa-4 pa-sm-6">
       <!-- Header -->
       <div class="d-flex align-center justify-space-between flex-wrap mb-6">
-      <div>
-        <h1 class="text-h4 font-weight-light mb-2">Post Announcement</h1>
-        <div class="section-underline"></div>
-      </div>
+        <div>
+          <h1 class="text-h4 font-weight-light mb-2">Assignments</h1>
+          <div class="section-underline"></div>
+        </div>
         <v-btn color="primary" @click="openCreateDialog" rounded="pill" class="mt-3 mt-sm-0">
           <v-icon start icon="mdi-plus-circle"></v-icon>
           Create Assignment
@@ -103,12 +103,35 @@
                     <v-icon size="12" icon="mdi-account-group" class="me-1"></v-icon>
                     {{ assignment.submissions?.length || 0 }} submissions
                   </span>
+                  <span v-if="assignment.attachments?.length" class="text-caption d-flex align-center">
+                    <v-icon size="12" icon="mdi-attachment" class="me-1"></v-icon>
+                    {{ assignment.attachments.length }} attachment(s)
+                  </span>
                 </div>
               </v-card-subtitle>
             </v-card-item>
 
             <v-card-text class="pt-0 px-4 pb-2">
               <p class="text-body-2 text-grey-darken-1">{{ truncateText(assignment.description, 120) }}</p>
+              
+              <!-- Show attachments in card -->
+              <div v-if="assignment.attachments?.length" class="mt-2">
+                <div class="d-flex flex-wrap gap-2">
+                  <a
+                    v-for="(attachment, idx) in assignment.attachments.slice(0, 3)"
+                    :key="idx"
+                    :href="attachment.webViewLink"
+                    target="_blank"
+                    class="attachment-link text-caption"
+                  >
+                    <v-icon size="14" class="mr-1">mdi-file</v-icon>
+                    {{ attachment.originalFileName || attachment.fileName }}
+                  </a>
+                  <span v-if="assignment.attachments.length > 3" class="text-caption text-grey">
+                    +{{ assignment.attachments.length - 3 }} more
+                  </span>
+                </div>
+              </div>
               
               <div v-if="assignment.submissions?.length" class="mt-3">
                 <div class="d-flex justify-space-between mb-1">
@@ -266,7 +289,7 @@
             </v-row>
 
             <v-row>
-              <v-col cols="12" md="6">
+              <v-col cols="12" md="4">
                 <v-text-field
                   v-model="formData.availableFrom"
                   label="Available From"
@@ -275,13 +298,23 @@
                   variant="outlined"
                 ></v-text-field>
               </v-col>
-              <v-col cols="12" md="6">
+              <v-col cols="12" md="4">
                 <v-text-field
                   v-model="formData.dueDate"
                   label="Due Date"
                   type="datetime-local"
                   :rules="[v => !!v || 'Required']"
                   variant="outlined"
+                ></v-text-field>
+              </v-col>
+              <v-col cols="12" md="4">
+                <v-text-field
+                  v-model="formData.availableUntil"
+                  label="Available Until (Optional)"
+                  type="datetime-local"
+                  variant="outlined"
+                  hint="Leave empty if no end date"
+                  persistent-hint
                 ></v-text-field>
               </v-col>
             </v-row>
@@ -293,6 +326,36 @@
               variant="outlined"
               hint="Comma-separated, leave empty for defaults"
             ></v-text-field>
+
+            <v-divider class="my-4"></v-divider>
+            
+            <div class="text-subtitle-2 mb-2">Assignment Attachments</div>
+            <v-file-input
+              v-model="attachmentFiles"
+              label="Upload attachments (optional)"
+              multiple
+              accept=".pdf,.doc,.docx,.jpg,.png,.zip,.py,.js,.java,.rar"
+              prepend-icon="mdi-attachment"
+              variant="outlined"
+              show-size
+              counter
+              hint="Upload reference materials or resources for students (max 5 files)"
+              persistent-hint
+            ></v-file-input>
+
+            <!-- Display existing attachments when editing -->
+            <div v-if="editingAssignment && existingAttachments.length > 0" class="mt-4">
+              <div class="text-subtitle-2 mb-2">Existing Attachments</div>
+              <div class="existing-attachments">
+                <div v-for="(attachment, index) in existingAttachments" :key="index" class="d-flex align-center mb-2 pa-2" style="background: #f5f5f5; border-radius: 8px;">
+                  <v-icon size="20" class="mr-2" color="primary">mdi-file-document</v-icon>
+                  <a :href="attachment.webViewLink" target="_blank" class="text-caption flex-grow-1 text-decoration-none">
+                    {{ attachment.originalFileName || attachment.fileName }}
+                  </a>
+                  <v-btn icon="mdi-close" size="x-small" variant="text" color="error" @click="removeExistingAttachment(index)"></v-btn>
+                </div>
+              </div>
+            </div>
           </v-form>
         </v-card-text>
         
@@ -308,7 +371,7 @@
 
     <!-- Grading Summary Dialog -->
     <v-dialog v-model="showSummaryDialog" max-width="500px">
-      <v-card variant="outlined">
+      <v-card>
         <v-card-title class="pa-4 d-flex align-center justify-space-between border-bottom">
           <span class="text-h6 font-weight-light">Grading Summary</span>
           <v-btn icon="mdi-close" variant="text" size="small" @click="showSummaryDialog = false"></v-btn>
@@ -374,7 +437,7 @@
 
     <!-- Delete Confirmation Dialog -->
     <v-dialog v-model="showDeleteDialog" max-width="400px">
-      <v-card variant="outlined">
+      <v-card>
         <v-card-title class="text-h6 font-weight-light pa-4">Delete Assignment</v-card-title>
         <v-divider></v-divider>
         <v-card-text class="pa-4">
@@ -419,6 +482,8 @@ const assignmentToDelete = ref(null)
 
 const assignmentForm = ref(null)
 const assignments = ref([])
+const attachmentFiles = ref([])
+const existingAttachments = ref([])
 
 const formData = ref({
   title: '',
@@ -432,11 +497,9 @@ const formData = ref({
   availableUntil: '',
   isActive: true,
   allowedFileTypes: '',
-  maxFileSize: null,
-  attachments: []
+  maxFileSize: null
 })
 
-// Timezone helper functions
 const utcToLocalDateTimeInput = (utcDateString) => {
   if (!utcDateString) return ''
   const date = new Date(utcDateString)
@@ -578,18 +641,28 @@ const loadAssignments = async () => {
     
     const allAssignmentsList = []
     for (const course of teacherStore.courses) {
-      const courseDetails = await teacherService.getMyCourses()
-      const fullCourse = courseDetails.find(c => c._id === course._id)
-      
-      if (fullCourse?.assignments) {
-        for (const assignment of fullCourse.assignments) {
+      try {
+        const response = await teacherService.getAssignments(course._id)
+        const courseAssignments = response.data || []
+        
+        for (const assignment of courseAssignments) {
           try {
             const submissions = await teacherService.getAssignmentSubmissions(assignment._id)
-            allAssignmentsList.push({ ...assignment, submissions: submissions || [] })
+            allAssignmentsList.push({ 
+              ...assignment, 
+              submissions: submissions || [],
+              courseId: course 
+            })
           } catch (err) {
-            allAssignmentsList.push({ ...assignment, submissions: [] })
+            allAssignmentsList.push({ 
+              ...assignment, 
+              submissions: [],
+              courseId: course 
+            })
           }
         }
+      } catch (error) {
+        console.error(`Failed to load assignments for course ${course._id}:`, error)
       }
     }
     assignments.value = allAssignmentsList
@@ -603,18 +676,28 @@ const loadAssignments = async () => {
   }
 }
 
+const removeExistingAttachment = (index) => {
+  existingAttachments.value.splice(index, 1)
+}
+
 const openCreateDialog = () => {
   editingAssignment.value = null
   const now = getCurrentPhilippineTime()
   const availableFrom = addHoursToLocalDate(now, 1)
   const dueDate = addDaysToLocalDate(availableFrom, 7)
+  const availableUntil = addDaysToLocalDate(dueDate, 30)
   
   formData.value = {
     title: '', description: '', instructions: '', courseId: selectedCourseId.value || teacherStore.courses[0]?._id || null,
-    maxScore: 100, passingScore: 60, availableFrom: formatDateToLocalInput(availableFrom),
-    dueDate: formatDateToLocalInput(dueDate), availableUntil: '', isActive: true,
-    allowedFileTypes: '', maxFileSize: null, attachments: []
+    maxScore: 100, passingScore: 60, 
+    availableFrom: formatDateToLocalInput(availableFrom),
+    dueDate: formatDateToLocalInput(dueDate), 
+    availableUntil: formatDateToLocalInput(availableUntil),
+    isActive: true,
+    allowedFileTypes: '', maxFileSize: null
   }
+  attachmentFiles.value = []
+  existingAttachments.value = []
   showAssignmentDialog.value = true
 }
 
@@ -624,11 +707,15 @@ const editAssignment = (assignment) => {
     title: assignment.title, description: assignment.description, instructions: assignment.instructions || '',
     courseId: typeof assignment.courseId === 'object' ? assignment.courseId._id : assignment.courseId,
     maxScore: assignment.maxScore, passingScore: assignment.passingScore,
-    availableFrom: utcToLocalDateTimeInput(assignment.availableFrom), dueDate: utcToLocalDateTimeInput(assignment.dueDate),
+    availableFrom: utcToLocalDateTimeInput(assignment.availableFrom), 
+    dueDate: utcToLocalDateTimeInput(assignment.dueDate),
     availableUntil: assignment.availableUntil ? utcToLocalDateTimeInput(assignment.availableUntil) : '',
-    isActive: assignment.isActive, allowedFileTypes: assignment.allowedFileTypes?.join(', ') || '',
-    maxFileSize: assignment.maxFileSize ? assignment.maxFileSize / (1024 * 1024) : null, attachments: []
+    isActive: assignment.isActive, 
+    allowedFileTypes: assignment.allowedFileTypes?.join(', ') || '',
+    maxFileSize: assignment.maxFileSize ? assignment.maxFileSize / (1024 * 1024) : null
   }
+  existingAttachments.value = assignment.attachments || []
+  attachmentFiles.value = []
   showAssignmentDialog.value = true
 }
 
@@ -638,25 +725,43 @@ const saveAssignment = async () => {
   
   saving.value = true
   try {
-    const submitData = {
-      title: formData.value.title,
-      description: formData.value.description,
-      instructions: formData.value.instructions || '',
-      maxScore: formData.value.maxScore,
-      passingScore: formData.value.passingScore,
-      availableFrom: localDateTimeToUTC(formData.value.availableFrom),
-      dueDate: localDateTimeToUTC(formData.value.dueDate),
-      availableUntil: localDateTimeToUTC(formData.value.availableUntil),
-      isActive: formData.value.isActive,
-      allowedFileTypes: formData.value.allowedFileTypes,
-      maxFileSize: formData.value.maxFileSize ? formData.value.maxFileSize * 1024 * 1024 : null
+    const formDataToSend = new FormData()
+    
+    formDataToSend.append('title', formData.value.title)
+    formDataToSend.append('description', formData.value.description)
+    formDataToSend.append('instructions', formData.value.instructions || '')
+    formDataToSend.append('maxScore', formData.value.maxScore.toString())
+    formDataToSend.append('passingScore', formData.value.passingScore.toString())
+    formDataToSend.append('isActive', formData.value.isActive.toString())
+    formDataToSend.append('availableFrom', localDateTimeToUTC(formData.value.availableFrom))
+    formDataToSend.append('dueDate', localDateTimeToUTC(formData.value.dueDate))
+    
+    if (formData.value.availableUntil) {
+      formDataToSend.append('availableUntil', localDateTimeToUTC(formData.value.availableUntil))
+    }
+    
+    if (formData.value.allowedFileTypes) {
+      formDataToSend.append('allowedFileTypes', formData.value.allowedFileTypes.split(',').map(t => t.trim()).join(','))
+    }
+    
+    if (formData.value.maxFileSize) {
+      formDataToSend.append('maxFileSize', (formData.value.maxFileSize * 1024 * 1024).toString())
+    }
+    
+    attachmentFiles.value.forEach(file => {
+      formDataToSend.append('attachments', file)
+    })
+    
+    if (editingAssignment.value && existingAttachments.value.length > 0) {
+      const keepAttachmentIds = existingAttachments.value.map(a => a.googleDriveFileId)
+      formDataToSend.append('keepAttachments', JSON.stringify(keepAttachmentIds))
     }
     
     if (editingAssignment.value) {
-      await teacherService.updateAssignment(editingAssignment.value._id, submitData)
+      await teacherService.updateAssignment(editingAssignment.value._id, formDataToSend)
       snackbar.value = { show: true, text: 'Assignment updated!', color: 'success' }
     } else {
-      await teacherService.createAssignment(formData.value.courseId, submitData)
+      await teacherService.createAssignment(formData.value.courseId, formDataToSend)
       snackbar.value = { show: true, text: 'Assignment created!', color: 'success' }
     }
     
@@ -675,7 +780,7 @@ const viewGradingSummary = async (assignment) => {
   try {
     const summary = await teacherService.getGradingSummary(assignment._id)
     summaryAssignment.value = assignment
-    summaryData.value = summary
+    summaryData.value = summary?.data
     showSummaryDialog.value = true
   } catch (error) {
     snackbar.value = { show: true, text: 'Failed to load summary', color: 'error' }
@@ -704,6 +809,8 @@ const deleteAssignment = async () => {
 const closeDialog = () => {
   showAssignmentDialog.value = false
   editingAssignment.value = null
+  attachmentFiles.value = []
+  existingAttachments.value = []
 }
 
 onMounted(() => {
@@ -743,5 +850,23 @@ onMounted(() => {
   text-transform: none;
   letter-spacing: normal;
   font-weight: 500;
+}
+
+.attachment-link {
+  text-decoration: none;
+  color: #1976d2;
+  padding: 4px 8px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.attachment-link:hover {
+  background: #e3f2fd;
+  text-decoration: underline;
+}
+
+.gap-2 {
+  gap: 8px;
 }
 </style>

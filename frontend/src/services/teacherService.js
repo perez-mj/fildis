@@ -1,5 +1,4 @@
 // frontend/src/services/teacherService.js
-// frontend/src/services/teacherService.js
 import api from '@/plugins/axios'
 
 // Helper function to extract ID from object or string
@@ -25,6 +24,14 @@ export default {
     return response.data.data
   },
 
+  // Get assignments for a specific course
+  async getAssignments(courseId) {
+    const id = extractId(courseId);
+    if (!id) throw new Error('Invalid course ID');
+    const response = await api.get(`/teacher/courses/${id}/assignments`)
+    return response.data
+  },
+
   // Upload material
   async uploadMaterial(courseId, formData) {
     const response = await api.post(`/teacher/courses/${courseId}/materials`, formData, {
@@ -44,9 +51,11 @@ export default {
   },
 
   async getAssignment(assignmentId) {
-  const response = await api.get(`/teacher/assignments/${assignmentId}`)
-  return response.data.data
-},
+    const id = extractId(assignmentId);
+    if (!id) throw new Error('Invalid assignment ID');
+    const response = await api.get(`/teacher/assignments/${id}`)
+    return response.data.data
+  },
 
   // Create assignment
   async createAssignment(courseId, formData) {
@@ -58,21 +67,24 @@ export default {
     return response.data.data
   },
 
-  // Update assignment
-  async updateAssignment(assignmentId, data) {
-    const id = extractId(assignmentId);
-    if (!id) throw new Error('Invalid assignment ID');
-    const response = await api.put(`/teacher/assignments/${id}`, data)
-    return response.data.data
-  },
+// Update assignment
+async updateAssignment(assignmentId, formData) {
+    // If formData is FormData, send as multipart/form-data
+    // Otherwise send as JSON
+    const config = formData instanceof FormData 
+        ? { headers: { 'Content-Type': 'multipart/form-data' } }
+        : { headers: { 'Content-Type': 'application/json' } };
+    
+    return api.put(`/teacher/assignments/${assignmentId}`, formData, config);
+},
 
   // Delete assignment
-async deleteAssignment(assignmentId) {
+  async deleteAssignment(assignmentId) {
     const id = extractId(assignmentId);
     if (!id) throw new Error('Invalid assignment ID');
     const response = await api.delete(`/teacher/assignments/${id}`)
     return response.data
-},
+  },
 
   // Get assignment submissions
   async getAssignmentSubmissions(assignmentId) {
@@ -109,5 +121,4 @@ async deleteAssignment(assignmentId) {
     const response = await api.get('/teacher/announcements')
     return response.data.data
   },
-  
 }

@@ -136,7 +136,6 @@
                   density="compact"
                   class="mb-2"
                 >
-                  <v-icon start icon="mdi-check-circle" size="16"></v-icon>
                   This submission is passing!
                 </v-alert>
                 <v-alert
@@ -146,7 +145,6 @@
                   density="compact"
                   class="mb-2"
                 >
-                  <v-icon start icon="mdi-alert" size="16"></v-icon>
                   Below passing score.
                 </v-alert>
               </v-form>
@@ -311,25 +309,46 @@ const loadSubmission = async () => {
       await teacherStore.fetchMyCourses()
     }
     
-    let allSubmissions = []
+    let foundSubmission = null
+    let associatedAssignment = null
+
+    // Loop through courses and assignments
     for (const course of teacherStore.courses) {
       if (course.assignments?.length) {
         for (const assignment of course.assignments) {
           try {
             const submissions = await teacherService.getAssignmentSubmissions(assignment._id)
-            allSubmissions.push(...submissions)
+            const match = submissions.find(s => s._id === submissionId)
+            
+            if (match) {
+              foundSubmission = match
+              associatedAssignment = assignment // Capture the parent assignment details!
+              break
+            }
           } catch (e) {
             console.error(`Failed to get submissions for assignment ${assignment._id}:`, e)
           }
         }
       }
+      if (foundSubmission) break
     }
     
-    submission.value = allSubmissions.find(s => s._id === submissionId)
-    
-    if (!submission.value) {
+    if (!foundSubmission) {
       throw new Error('Submission not found')
     }
+
+    // CRITICAL FIX: If assignmentId is just a String, construct the object 
+    // using the assignment context found during our loop lookup.
+    if (typeof foundSubmission.assignmentId === 'string') {
+      foundSubmission.assignmentId = {
+        _id: foundSubmission.assignmentId,
+        title: associatedAssignment?.title || 'Unknown Assignment',
+        maxScore: associatedAssignment?.maxScore || 100,
+        passingScore: associatedAssignment?.passingScore || 60
+      }
+    }
+    
+    submission.value = foundSubmission
     
     if (submission.value.grade) {
       gradeData.value.score = submission.value.grade.score

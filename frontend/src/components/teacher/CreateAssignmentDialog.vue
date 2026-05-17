@@ -85,7 +85,7 @@
         </v-row>
 
         <v-row>
-          <v-col cols="12" md="6">
+          <v-col cols="12" md="4">
             <v-text-field
               v-model="formData.availableFrom"
               label="Available From"
@@ -94,13 +94,23 @@
               variant="outlined"
             ></v-text-field>
           </v-col>
-          <v-col cols="12" md="6">
+          <v-col cols="12" md="4">
             <v-text-field
               v-model="formData.dueDate"
               label="Due Date"
               type="datetime-local"
               :rules="[v => !!v || 'Required']"
               variant="outlined"
+            ></v-text-field>
+          </v-col>
+          <v-col cols="12" md="4">
+            <v-text-field
+              v-model="formData.availableUntil"
+              label="Available Until (Optional)"
+              type="datetime-local"
+              variant="outlined"
+              hint="Leave empty if no end date"
+              persistent-hint
             ></v-text-field>
           </v-col>
         </v-row>
@@ -112,6 +122,34 @@
           variant="outlined"
           hint="Comma-separated, leave empty for defaults"
         ></v-text-field>
+
+        <v-divider class="my-4"></v-divider>
+        
+        <div class="text-subtitle-2 mb-2">Assignment Attachments</div>
+        <v-file-input
+          v-model="attachmentFiles"
+          label="Upload attachments (optional)"
+          multiple
+          accept=".pdf,.doc,.docx,.jpg,.png,.zip,.py,.js,.java,.rar"
+          prepend-icon="mdi-attachment"
+          variant="outlined"
+          show-size
+          counter
+          hint="Upload reference materials or resources for students (max 5 files)"
+          persistent-hint
+        ></v-file-input>
+
+        <!-- Display existing attachments when editing -->
+        <div v-if="isEditing && existingAttachments.length > 0" class="mt-4">
+          <div class="text-subtitle-2 mb-2">Existing Attachments</div>
+          <div class="existing-attachments">
+            <div v-for="(attachment, index) in existingAttachments" :key="index" class="attachment-item d-flex align-center mb-2">
+              <v-icon size="20" class="mr-2" color="primary">mdi-file-document</v-icon>
+              <span class="text-caption flex-grow-1">{{ attachment.originalFileName || attachment.fileName }}</span>
+              <v-btn icon="mdi-close" size="x-small" variant="text" color="error" @click="removeExistingAttachment(index)"></v-btn>
+            </div>
+          </div>
+        </div>
       </v-form>
     </v-card-text>
     
@@ -151,6 +189,8 @@ const saving = ref(false)
 const formValid = ref(false)
 const assignmentForm = ref(null)
 const isEditing = ref(false)
+const attachmentFiles = ref([])
+const existingAttachments = ref([])
 
 const formData = ref({
   title: '',
@@ -164,8 +204,7 @@ const formData = ref({
   availableUntil: '',
   isActive: true,
   allowedFileTypes: '',
-  maxFileSize: null,
-  attachments: []
+  maxFileSize: null
 })
 
 // Timezone helper functions
@@ -213,9 +252,15 @@ const setDefaultDates = () => {
   const now = getCurrentPhilippineTime()
   const availableFrom = addHoursToLocalDate(now, 1)
   const dueDate = addDaysToLocalDate(availableFrom, 7)
+  const availableUntil = addDaysToLocalDate(dueDate, 30)
   
   formData.value.availableFrom = formatDateToLocalInput(availableFrom)
   formData.value.dueDate = formatDateToLocalInput(dueDate)
+  formData.value.availableUntil = formatDateToLocalInput(availableUntil)
+}
+
+const removeExistingAttachment = (index) => {
+  existingAttachments.value.splice(index, 1)
 }
 
 const saveAssignment = async () => {
@@ -225,27 +270,48 @@ const saveAssignment = async () => {
   saving.value = true
   
   try {
-    const submitData = {
-      title: formData.value.title,
-      description: formData.value.description,
-      instructions: formData.value.instructions || '',
-      maxScore: formData.value.maxScore,
-      passingScore: formData.value.passingScore,
-      isActive: formData.value.isActive,
-      availableFrom: localDateTimeToUTC(formData.value.availableFrom),
-      dueDate: localDateTimeToUTC(formData.value.dueDate),
-      availableUntil: localDateTimeToUTC(formData.value.availableUntil),
-      allowedFileTypes: formData.value.allowedFileTypes,
-      maxFileSize: formData.value.maxFileSize ? formData.value.maxFileSize * 1024 * 1024 : null
+    const formDataToSend = new FormData()
+    
+    // Add all text fields
+    formDataToSend.append('title', formData.value.title)
+    formDataToSend.append('description', formData.value.description)
+    formDataToSend.append('instructions', formData.value.instructions || '')
+    formDataToSend.append('maxScore', formData.value.maxScore.toString())
+    formDataToSend.append('passingScore', formData.value.passingScore.toString())
+    formDataToSend.append('isActive', formData.value.isActive.toString())
+    formDataToSend.append('availableFrom', localDateTimeToUTC(formData.value.availableFrom))
+    formDataToSend.append('dueDate', localDateTimeToUTC(formData.value.dueDate))
+    
+    if (formData.value.availableUntil) {
+      formDataToSend.append('availableUntil', localDateTimeToUTC(formData.value.availableUntil))
+    }
+    
+    if (formData.value.allowedFileTypes) {
+      formDataToSend.append('allowedFileTypes', formData.value.allowedFileTypes.split(',').map(t => t.trim()).join(','))
+    }
+    
+    if (formData.value.maxFileSize) {
+      formDataToSend.append('maxFileSize', (formData.value.maxFileSize * 1024 * 1024).toString())
+    }
+    
+    // Add new attachment files
+    attachmentFiles.value.forEach(file => {
+      formDataToSend.append('attachments', file)
+    })
+    
+    // If editing and there are existing attachments to keep, send their IDs
+    if (isEditing.value && existingAttachments.value.length > 0) {
+      const keepAttachmentIds = existingAttachments.value.map(a => a.googleDriveFileId)
+      formDataToSend.append('keepAttachments', JSON.stringify(keepAttachmentIds))
     }
     
     const courseId = formData.value.courseId || props.courseId
     
     if (isEditing.value && props.assignment) {
-      await teacherService.updateAssignment(props.assignment._id, submitData)
+      await teacherService.updateAssignment(props.assignment._id, formDataToSend)
       snackbar.value = { show: true, text: 'Assignment updated!', color: 'success' }
     } else {
-      await teacherService.createAssignment(courseId, submitData)
+      await teacherService.createAssignment(courseId, formDataToSend)
       snackbar.value = { show: true, text: 'Assignment created!', color: 'success' }
     }
     
@@ -278,9 +344,9 @@ watch(() => props.assignment, (newAssignment) => {
       availableUntil: newAssignment.availableUntil ? utcToLocalDateTimeInput(newAssignment.availableUntil) : '',
       isActive: newAssignment.isActive,
       allowedFileTypes: newAssignment.allowedFileTypes?.join(', ') || '',
-      maxFileSize: newAssignment.maxFileSize ? newAssignment.maxFileSize / (1024 * 1024) : null,
-      attachments: []
+      maxFileSize: newAssignment.maxFileSize ? newAssignment.maxFileSize / (1024 * 1024) : null
     }
+    existingAttachments.value = newAssignment.attachments || []
   }
 }, { immediate: true })
 

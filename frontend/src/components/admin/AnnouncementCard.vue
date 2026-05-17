@@ -163,7 +163,7 @@ const getAudienceIcon = (target) => {
   const icons = {
     all: 'mdi-account-group',
     students: 'mdi-school',
-    teachers: 'mdi-teacher',
+    teachers: 'mdi-account-tie',
     admins: 'mdi-shield-account'
   }
   return icons[target] || 'mdi-bullhorn'
@@ -182,7 +182,7 @@ const getAudienceLabel = (target) => {
 const getRoleIcon = (role) => {
   const icons = {
     admin: 'mdi-shield-account',
-    teacher: 'mdi-teacher',
+    teacher: 'mdi-account-tie',
     student: 'mdi-school'
   }
   return icons[role] || 'mdi-account'

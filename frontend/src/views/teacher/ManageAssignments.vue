@@ -210,7 +210,7 @@
       </v-row>
     </v-container>
 
-    <!-- Create/Edit Assignment Dialog -->
+    <!-- Create/Edit Assignment Dialog (FIXED) -->
     <v-dialog v-model="showAssignmentDialog" max-width="900px" scrollable>
       <v-card>
         <v-card-title class="pa-4 d-flex align-center justify-space-between border-bottom">
@@ -485,6 +485,7 @@ const assignments = ref([])
 const attachmentFiles = ref([])
 const existingAttachments = ref([])
 
+// FIXED: Added missing availableUntil field
 const formData = ref({
   title: '',
   description: '',
@@ -500,6 +501,7 @@ const formData = ref({
   maxFileSize: null
 })
 
+// Timezone helper functions
 const utcToLocalDateTimeInput = (utcDateString) => {
   if (!utcDateString) return ''
   const date = new Date(utcDateString)
@@ -680,6 +682,7 @@ const removeExistingAttachment = (index) => {
   existingAttachments.value.splice(index, 1)
 }
 
+// FIXED: Added availableUntil to form data
 const openCreateDialog = () => {
   editingAssignment.value = null
   const now = getCurrentPhilippineTime()
@@ -688,25 +691,34 @@ const openCreateDialog = () => {
   const availableUntil = addDaysToLocalDate(dueDate, 30)
   
   formData.value = {
-    title: '', description: '', instructions: '', courseId: selectedCourseId.value || teacherStore.courses[0]?._id || null,
-    maxScore: 100, passingScore: 60, 
+    title: '', 
+    description: '', 
+    instructions: '', 
+    courseId: selectedCourseId.value || teacherStore.courses[0]?._id || null,
+    maxScore: 100, 
+    passingScore: 60, 
     availableFrom: formatDateToLocalInput(availableFrom),
     dueDate: formatDateToLocalInput(dueDate), 
     availableUntil: formatDateToLocalInput(availableUntil),
     isActive: true,
-    allowedFileTypes: '', maxFileSize: null
+    allowedFileTypes: '', 
+    maxFileSize: null
   }
   attachmentFiles.value = []
   existingAttachments.value = []
   showAssignmentDialog.value = true
 }
 
+// FIXED: Added availableUntil handling
 const editAssignment = (assignment) => {
   editingAssignment.value = assignment
   formData.value = {
-    title: assignment.title, description: assignment.description, instructions: assignment.instructions || '',
+    title: assignment.title, 
+    description: assignment.description, 
+    instructions: assignment.instructions || '',
     courseId: typeof assignment.courseId === 'object' ? assignment.courseId._id : assignment.courseId,
-    maxScore: assignment.maxScore, passingScore: assignment.passingScore,
+    maxScore: assignment.maxScore, 
+    passingScore: assignment.passingScore,
     availableFrom: utcToLocalDateTimeInput(assignment.availableFrom), 
     dueDate: utcToLocalDateTimeInput(assignment.dueDate),
     availableUntil: assignment.availableUntil ? utcToLocalDateTimeInput(assignment.availableUntil) : '',
@@ -719,6 +731,7 @@ const editAssignment = (assignment) => {
   showAssignmentDialog.value = true
 }
 
+// FIXED: Improved save function with better FormData handling
 const saveAssignment = async () => {
   const isValid = await assignmentForm.value?.validate()
   if (!isValid) return
@@ -727,6 +740,7 @@ const saveAssignment = async () => {
   try {
     const formDataToSend = new FormData()
     
+    // Add basic fields
     formDataToSend.append('title', formData.value.title)
     formDataToSend.append('description', formData.value.description)
     formDataToSend.append('instructions', formData.value.instructions || '')
@@ -736,33 +750,42 @@ const saveAssignment = async () => {
     formDataToSend.append('availableFrom', localDateTimeToUTC(formData.value.availableFrom))
     formDataToSend.append('dueDate', localDateTimeToUTC(formData.value.dueDate))
     
+    // Add availableUntil only if it has a value
     if (formData.value.availableUntil) {
       formDataToSend.append('availableUntil', localDateTimeToUTC(formData.value.availableUntil))
     }
     
+    // Add allowed file types
     if (formData.value.allowedFileTypes) {
-      formDataToSend.append('allowedFileTypes', formData.value.allowedFileTypes.split(',').map(t => t.trim()).join(','))
+      const fileTypes = formData.value.allowedFileTypes.split(',').map(t => t.trim()).join(',')
+      formDataToSend.append('allowedFileTypes', fileTypes)
     }
     
+    // Add max file size
     if (formData.value.maxFileSize) {
       formDataToSend.append('maxFileSize', (formData.value.maxFileSize * 1024 * 1024).toString())
     }
     
+    // Add new attachments
     attachmentFiles.value.forEach(file => {
       formDataToSend.append('attachments', file)
     })
     
+    // For edit: specify which attachments to keep
     if (editingAssignment.value && existingAttachments.value.length > 0) {
       const keepAttachmentIds = existingAttachments.value.map(a => a.googleDriveFileId)
       formDataToSend.append('keepAttachments', JSON.stringify(keepAttachmentIds))
+    } else if (editingAssignment.value && existingAttachments.value.length === 0) {
+      // If no existing attachments, send empty array to remove all
+      formDataToSend.append('keepAttachments', JSON.stringify([]))
     }
     
     if (editingAssignment.value) {
       await teacherService.updateAssignment(editingAssignment.value._id, formDataToSend)
-      snackbar.value = { show: true, text: 'Assignment updated!', color: 'success' }
+      snackbar.value = { show: true, text: 'Assignment updated successfully!', color: 'success' }
     } else {
       await teacherService.createAssignment(formData.value.courseId, formDataToSend)
-      snackbar.value = { show: true, text: 'Assignment created!', color: 'success' }
+      snackbar.value = { show: true, text: 'Assignment created successfully!', color: 'success' }
     }
     
     closeDialog()
@@ -770,7 +793,11 @@ const saveAssignment = async () => {
     await teacherStore.fetchMyCourses()
   } catch (error) {
     console.error('Failed to save assignment:', error)
-    snackbar.value = { show: true, text: error.response?.data?.message || 'Failed to save', color: 'error' }
+    snackbar.value = { 
+      show: true, 
+      text: error.response?.data?.message || 'Failed to save assignment', 
+      color: 'error' 
+    }
   } finally {
     saving.value = false
   }
@@ -778,11 +805,13 @@ const saveAssignment = async () => {
 
 const viewGradingSummary = async (assignment) => {
   try {
-    const summary = await teacherService.getGradingSummary(assignment._id)
+    const response = await teacherService.getGradingSummary(assignment._id)
     summaryAssignment.value = assignment
-    summaryData.value = summary?.data
+    // Fix: Extract the data from the response
+    summaryData.value = response.data || response
     showSummaryDialog.value = true
   } catch (error) {
+    console.error('Failed to load summary:', error)
     snackbar.value = { show: true, text: 'Failed to load summary', color: 'error' }
   }
 }
@@ -798,9 +827,10 @@ const deleteAssignment = async () => {
     await teacherService.deleteAssignment(assignmentToDelete.value._id)
     assignments.value = assignments.value.filter(a => a._id !== assignmentToDelete.value._id)
     showDeleteDialog.value = false
-    snackbar.value = { show: true, text: 'Assignment deleted', color: 'success' }
+    snackbar.value = { show: true, text: 'Assignment deleted successfully', color: 'success' }
   } catch (error) {
-    snackbar.value = { show: true, text: 'Failed to delete', color: 'error' }
+    console.error('Failed to delete assignment:', error)
+    snackbar.value = { show: true, text: 'Failed to delete assignment', color: 'error' }
   } finally {
     deleting.value = false
   }
@@ -811,6 +841,7 @@ const closeDialog = () => {
   editingAssignment.value = null
   attachmentFiles.value = []
   existingAttachments.value = []
+  formValid.value = false
 }
 
 onMounted(() => {

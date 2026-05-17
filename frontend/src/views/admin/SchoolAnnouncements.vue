@@ -15,7 +15,7 @@
       </div>
 
       <!-- Filters -->
-      <v-card variant="outlined" class="mb-4">
+      <v-card class="mb-4">
         <v-card-text class="pa-4">
           <v-row>
             <v-col cols="12" md="3">
@@ -24,7 +24,7 @@
                 label="Priority"
                 clearable
                 :items="priorityOptions"
-                variant="outlined"
+                variant="underlined"
                 density="comfortable"
               >
                 <template v-slot:selection="{ item }">
@@ -40,7 +40,7 @@
                 label="Target Audience"
                 clearable
                 :items="audienceOptions"
-                variant="outlined"
+                variant="underlined"
                 density="comfortable"
               ></v-select>
             </v-col>
@@ -50,7 +50,7 @@
                 label="Search announcements"
                 prepend-inner-icon="mdi-magnify"
                 clearable
-                variant="outlined"
+                variant="underlined"
                 density="comfortable"
               ></v-text-field>
             </v-col>

@@ -87,41 +87,54 @@
           </v-card>
         </v-col>
 
-        <!-- Preview Panel -->
+        <!-- Preview Panel - Now matches student view design -->
         <v-col cols="12" md="4">
           <v-card variant="outlined" class="preview-card">
             <v-card-title class="pa-3 border-bottom">
               <span class="text-subtitle-1 font-weight-light">Preview</span>
             </v-card-title>
-            <v-card-text class="pa-4">
-              <div class="announcement-preview">
-                <div class="d-flex align-center mb-3">
-                  <v-avatar size="36" color="primary" variant="tonal">
-                    <v-icon icon="mdi-school" size="18"></v-icon>
-                  </v-avatar>
-                  <div class="ml-3">
-                    <div class="text-body-2 font-weight-medium">{{ authStore.userName }}</div>
-                    <div class="text-caption text-grey-darken-1">Teacher • Just now</div>
+            <v-card-text class="pa-0">
+              <div class="preview-announcement-card rounded-xl" :class="{ 'preview-pinned': formData.isPinned }">
+                <div class="preview-announcement-content">
+                  <div class="preview-announcement-icon" :class="getPriorityClass(formData.priority)">
+                    <v-icon :icon="getPriorityIcon(formData.priority)" size="24"></v-icon>
                   </div>
-                </div>
-                
-                <div class="preview-content">
-                  <v-chip 
-                    v-if="formData.priority !== 'normal'" 
-                    :color="getPriorityColor(formData.priority)" 
-                    size="x-small" 
-                    variant="tonal"
-                    class="mb-2"
-                  >
-                    {{ formData.priority.toUpperCase() }}
-                  </v-chip>
                   
-                  <h3 class="text-subtitle-1 font-weight-medium mb-1">{{ formData.title || 'Announcement Title' }}</h3>
-                  <p class="text-body-2 text-grey-darken-1">{{ formData.content || 'Your announcement content will appear here...' }}</p>
-                  
-                  <div v-if="formData.isPinned" class="mt-2">
-                    <v-icon icon="mdi-pin" size="12" color="warning"></v-icon>
-                    <span class="text-caption text-warning"> Pinned</span>
+                  <div class="preview-announcement-info">
+                    <div class="preview-announcement-header">
+                      <h3 class="preview-announcement-title">
+                        {{ formData.title || 'Announcement Title' }}
+                        <div class="title-accent" v-if="formData.isPinned"></div>
+                      </h3>
+                      <div class="preview-announcement-badges">
+                        <v-chip v-if="formData.isPinned" size="x-small" color="primary" variant="light" class="rounded-pill">
+                          <v-icon start size="10">mdi-pin</v-icon>
+                          Pinned
+                        </v-chip>
+                        <v-chip v-if="formData.priority === 'urgent'" size="x-small" color="error" variant="light" class="rounded-pill">
+                          <v-icon start size="10">mdi-alert</v-icon>
+                          Urgent
+                        </v-chip>
+                      </div>
+                    </div>
+                    
+                    <div class="preview-announcement-meta">
+                      <span class="preview-meta-item">
+                        <v-icon size="12">mdi-account-circle-outline</v-icon>
+                        {{ authStore.userName || 'Teacher Name' }}
+                      </span>
+                      <span class="preview-meta-divider">•</span>
+                      <span class="preview-meta-item">
+                        <v-icon size="12">mdi-calendar-outline</v-icon>
+                        Just now
+                      </span>
+                      <span v-if="formData.courseId" class="preview-meta-item">
+                        <v-icon size="12">mdi-book-open-outline</v-icon>
+                        {{ getSelectedCourseCode() }}
+                      </span>
+                    </div>
+                    
+                    <p class="preview-announcement-text">{{ formData.content || 'Your announcement content will appear here...' }}</p>
                   </div>
                 </div>
               </div>
@@ -196,14 +209,30 @@ const courseOptions = computed(() => {
   }))
 })
 
-const getPriorityColor = (priority) => {
-  const colors = {
-    low: 'info',
-    normal: 'primary',
-    high: 'warning',
-    urgent: 'error'
+const getPriorityClass = (priority) => {
+  const classes = {
+    low: 'priority-low',
+    normal: 'priority-normal',
+    high: 'priority-high',
+    urgent: 'priority-urgent'
   }
-  return colors[priority] || 'primary'
+  return classes[priority] || 'priority-normal'
+}
+
+const getPriorityIcon = (priority) => {
+  const icons = {
+    low: 'mdi-information-outline',
+    normal: 'mdi-bullhorn-outline',
+    high: 'mdi-alert-outline',
+    urgent: 'mdi-alert-circle-outline'
+  }
+  return icons[priority] || 'mdi-bullhorn-outline'
+}
+
+const getSelectedCourseCode = () => {
+  if (!formData.value.courseId) return ''
+  const course = teacherStore.courses.find(c => c._id === formData.value.courseId)
+  return course ? course.courseCode : ''
 }
 
 const formatRelativeTime = (date) => {
@@ -319,8 +348,115 @@ onMounted(async () => {
   top: 20px;
 }
 
-.announcement-preview {
-  border-radius: 12px;
+/* Preview styles - matching student view exactly */
+.preview-announcement-card {
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+  background: white;
+  margin: 0;
+}
+
+.preview-announcement-card.preview-pinned {
+  border-left: 3px solid #6366f1;
+  background: rgba(99, 102, 241, 0.02);
+}
+
+.preview-announcement-content {
+  display: flex;
+  gap: 16px;
+  padding: 20px;
+}
+
+.preview-announcement-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+}
+
+.preview-announcement-icon.priority-low {
+  background: rgba(100, 116, 139, 0.1);
+  color: #64748b;
+}
+
+.preview-announcement-icon.priority-normal {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.preview-announcement-icon.priority-high {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.preview-announcement-icon.priority-urgent {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.preview-announcement-info {
+  flex: 1;
+}
+
+.preview-announcement-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.preview-announcement-title {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #0f172a;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.title-accent {
+  width: 24px;
+  height: 2px;
+  background: #6366f1;
+  border-radius: 2px;
+}
+
+.preview-announcement-badges {
+  display: flex;
+  gap: 6px;
+}
+
+.preview-announcement-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.preview-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  color: #64748b;
+}
+
+.preview-meta-divider {
+  color: #cbd5e1;
+}
+
+.preview-announcement-text {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #334155;
+  margin: 0;
 }
 
 .calm-list {
@@ -335,5 +471,35 @@ onMounted(async () => {
 .calm-list-item:hover {
   transform: translateX(4px);
   background-color: rgba(99, 102, 241, 0.04);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .preview-announcement-content {
+    padding: 16px;
+    gap: 12px;
+  }
+  
+  .preview-announcement-icon {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .preview-announcement-icon .v-icon {
+    font-size: 20px;
+  }
+  
+  .preview-announcement-title {
+    font-size: 0.9rem;
+  }
+  
+  .preview-announcement-text {
+    font-size: 0.85rem;
+  }
+  
+  .preview-announcement-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 </style>

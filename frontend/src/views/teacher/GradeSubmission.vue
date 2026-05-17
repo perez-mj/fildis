@@ -297,7 +297,6 @@ const submitGrade = async () => {
 
 const loadSubmission = async () => {
   const submissionId = route.params.submissionId
-  
   if (!submissionId) {
     snackbar.value = { show: true, text: 'Invalid submission ID', color: 'error' }
     return
@@ -305,62 +304,53 @@ const loadSubmission = async () => {
   
   loading.value = true
   try {
+    // 1. Ensure course and assignment metrics are loaded into memory cache
     if (teacherStore.courses.length === 0) {
       await teacherStore.fetchMyCourses()
     }
-    
-    let foundSubmission = null
-    let associatedAssignment = null
 
-    // Loop through courses and assignments
+    // 2. Scan memory cache first to pinpoint the assignment context
+    let targetAssignmentId = null
     for (const course of teacherStore.courses) {
       if (course.assignments?.length) {
-        for (const assignment of course.assignments) {
-          try {
-            const submissions = await teacherService.getAssignmentSubmissions(assignment._id)
-            const match = submissions.find(s => s._id === submissionId)
-            
-            if (match) {
-              foundSubmission = match
-              associatedAssignment = assignment // Capture the parent assignment details!
-              break
-            }
-          } catch (e) {
-            console.error(`Failed to get submissions for assignment ${assignment._id}:`, e)
-          }
+        const matchedAssign = course.assignments.find(a => 
+          teacherStore.submissions.some(s => s._id === submissionId && s.assignmentId?._id === a._id)
+        )
+        if (matchedAssign) {
+          targetAssignmentId = matchedAssign._id
+          break
         }
       }
-      if (foundSubmission) break
-    }
-    
-    if (!foundSubmission) {
-      throw new Error('Submission not found')
     }
 
-    // CRITICAL FIX: If assignmentId is just a String, construct the object 
-    // using the assignment context found during our loop lookup.
-    if (typeof foundSubmission.assignmentId === 'string') {
-      foundSubmission.assignmentId = {
-        _id: foundSubmission.assignmentId,
-        title: associatedAssignment?.title || 'Unknown Assignment',
-        maxScore: associatedAssignment?.maxScore || 100,
-        passingScore: associatedAssignment?.passingScore || 60
+    // Fallback: If not cached yet, loop fetch to refresh store collections
+    if (!targetAssignmentId) {
+      for (const course of teacherStore.courses) {
+        if (course.assignments?.length) {
+          for (const assign of course.assignments) {
+            const subs = await teacherStore.fetchAssignmentSubmissions(assign._id)
+            if (subs.some(s => s._id === submissionId)) {
+              targetAssignmentId = assign._id
+              break
+            }
+          }
+        }
+        if (targetAssignmentId) break
       }
     }
-    
-    submission.value = foundSubmission
-    
+
+    // 3. Extract your beautifully structured, normalized submission object
+    const found = teacherStore.submissions.find(s => s._id === submissionId)
+    if (!found) throw new Error('Submission structure not found in application memory')
+
+    submission.value = found
     if (submission.value.grade) {
       gradeData.value.score = submission.value.grade.score
       gradeData.value.feedback = submission.value.grade.feedback || ''
     }
   } catch (error) {
-    console.error('Failed to load submission:', error)
-    snackbar.value = { 
-      show: true, 
-      text: error.message || 'Failed to load submission', 
-      color: 'error' 
-    }
+    console.error('Failed to parse submission safely:', error)
+    snackbar.value = { show: true, text: error.message, color: 'error' }
   } finally {
     loading.value = false
   }

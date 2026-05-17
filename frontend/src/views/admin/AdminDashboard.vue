@@ -104,7 +104,7 @@
                     color="warning"
                     variant="outlined"
                     height="72"
-                    to="/admin/enrollment"
+                    to="/admin/enrollments"
                     rounded="lg"
                     class="quick-action-btn"
                   >
@@ -134,7 +134,7 @@
                   </v-avatar>
                 </template>
                 <v-list-item-title class="text-body-2">
-                  {{ enrollment.student?.firstName }} {{ enrollment.student?.lastName }}
+                  {{ enrollment.student[0]?.firstName }} {{ enrollment.student[0]?.lastName }}
                 </v-list-item-title>
                 <v-list-item-subtitle class="text-caption text-grey-darken-1">
                   Enrolled in {{ enrollment.courseName }}

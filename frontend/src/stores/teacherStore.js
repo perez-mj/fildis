@@ -21,6 +21,19 @@ export const useTeacherStore = defineStore('teacher', {
     },
     totalStudentsCount: (state) => {
       return state.courses.reduce((total, course) => total + (course.students?.length || 0), 0)
+    },
+    // Helper map getter to instantly locate assignments without array loops
+    assignmentMap: (state) => {
+      const map = new Map()
+      // First inventory global assignments array
+      state.assignments.forEach(a => map.set(a._id, a))
+      // Then overlay embedded course assignments if available
+      state.courses.forEach(course => {
+        if (course.assignments?.length) {
+          course.assignments.forEach(a => map.set(a._id, a))
+        }
+      })
+      return map
     }
   },
 
@@ -29,6 +42,33 @@ export const useTeacherStore = defineStore('teacher', {
       this.loading = true
       try {
         const stats = await teacherService.getTeacherStats()
+        
+        // NORMALIZATION: Intercept recent submissions and inject assignment objects
+        if (stats && stats.recentSubmissions?.length) {
+          stats.recentSubmissions = stats.recentSubmissions.map(submission => {
+            let targetId = ''
+            let existingObj = {}
+
+            if (typeof submission.assignmentId === 'string') {
+              targetId = submission.assignmentId
+            } else if (submission.assignmentId && typeof submission.assignmentId === 'object') {
+              targetId = submission.assignmentId._id
+              existingObj = submission.assignmentId
+            }
+
+            const match = this.assignmentMap.get(targetId)
+            return {
+              ...submission,
+              assignmentId: {
+                _id: targetId,
+                title: match?.title || existingObj.title || 'Loading...',
+                maxScore: match?.maxScore || existingObj.maxScore || 100,
+                passingScore: match?.passingScore || existingObj.passingScore || 60
+              }
+            }
+          })
+        }
+
         this.stats = stats
         return stats
       } catch (error) {
@@ -58,7 +98,6 @@ export const useTeacherStore = defineStore('teacher', {
       try {
         const response = await teacherService.getAssignments(courseId)
         const assignments = response.data || []
-        // Store in assignments array
         this.assignments = assignments
         return assignments
       } catch (error) {
@@ -134,8 +173,31 @@ export const useTeacherStore = defineStore('teacher', {
       this.loading = true
       try {
         const submissions = await teacherService.getAssignmentSubmissions(assignmentId)
-        this.submissions = submissions
-        return submissions
+        
+        // NORMALIZATION: Hydrate string assignmentIds into functional UI objects
+        const match = this.assignmentMap.get(assignmentId)
+        const normalizedSubmissions = (submissions || []).map(submission => {
+          let targetId = assignmentId
+          let existingObj = {}
+
+          if (submission.assignmentId && typeof submission.assignmentId === 'object') {
+            targetId = submission.assignmentId._id || targetId
+            existingObj = submission.assignmentId
+          }
+
+          return {
+            ...submission,
+            assignmentId: {
+              _id: targetId,
+              title: match?.title || existingObj.title || 'Loading...',
+              maxScore: match?.maxScore || existingObj.maxScore || 100,
+              passingScore: match?.passingScore || existingObj.passingScore || 60
+            }
+          }
+        })
+
+        this.submissions = normalizedSubmissions
+        return normalizedSubmissions
       } catch (error) {
         this.error = error.response?.data?.message || 'Failed to fetch submissions'
         throw error
@@ -164,7 +226,12 @@ export const useTeacherStore = defineStore('teacher', {
         const graded = await teacherService.gradeSubmission(submissionId, score, feedback)
         const index = this.submissions.findIndex(s => s._id === submissionId)
         if (index !== -1) {
-          this.submissions[index] = graded
+          // Keep structure intact when merging back the grading payload updates
+          this.submissions[index] = {
+            ...this.submissions[index],
+            ...graded,
+            grade: { score, feedback }
+          }
         }
         return graded
       } catch (error) {

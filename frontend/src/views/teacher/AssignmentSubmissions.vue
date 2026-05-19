@@ -195,7 +195,7 @@
 
     <!-- View Files Dialog - Minimalist -->
     <v-dialog v-model="showFilesDialog" max-width="600px" scrollable>
-      <v-card variant="outlined">
+      <v-card>
         <v-card-title class="pa-4 d-flex align-center justify-space-between">
           <span class="text-h6 font-weight-light">Submitted Files</span>
           <v-btn icon="mdi-close" variant="text" size="small" @click="showFilesDialog = false"></v-btn>

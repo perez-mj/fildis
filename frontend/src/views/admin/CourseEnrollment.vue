@@ -208,7 +208,7 @@
 
     <!-- Remove Student Dialog -->
     <v-dialog v-model="removeDialog" max-width="400px">
-      <v-card variant="outlined">
+      <v-card>
         <v-card-title class="text-h6 font-weight-light pa-4 border-bottom">Remove Student</v-card-title>
         <v-card-text class="pa-4">
           Remove <strong>{{ studentToRemove?.firstName }} {{ studentToRemove?.lastName }}</strong> from 
